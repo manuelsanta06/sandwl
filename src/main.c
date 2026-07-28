@@ -23,6 +23,7 @@
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/util/log.h>
+#include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
 
@@ -259,16 +260,51 @@ static void xdg_toplevel_commit(struct wl_listener *listener,void *data){
 }
 
 
-static void xdg_toplevel_destroy(struct wl_listener *listener,void *data){}
+//sets upp an interactive move/resize operation
+//the compositor stops propagating pointer vents to clients and consumes them itself
+static void begin_interactive(struct sandwl_toplevel *toplevel,enum sandwl_cursor_mode mode,uint32_t edges){
+  struct sandwl_server *server=toplevel->server;
 
+  server->grabbed_toplevel=toplevel;
+  server->cursor_mode=mode;
 
-static void xdg_toplevel_request_move(struct wl_listener *listener,void *data){}
+  if(mode==SANDWL_CURSOR_MOVE){
+    server->grab_x=server->cursor->x-toplevel->scene_tree->node.x;
+    server->grab_y=server->cursor->y-toplevel->scene_tree->node.y;
+  }else{
+    struct wlr_box *geo_box=&toplevel->xdg_toplevel->base->geometry;
 
-static void xdg_toplevel_request_resize(struct wl_listener *listener,void *data){}
+    double border_x=(toplevel->scene_tree->node.x+geo_box->x)+((edges&WLR_EDGE_RIGHT)?geo_box->width:0);
+    double border_y=(toplevel->scene_tree->node.y+geo_box->y)+((edges&WLR_EDGE_BOTTOM)?geo_box->height:0);
+    server->grab_x=server->cursor->x-border_x;
+    server->grab_y=server->cursor->y-border_y;
 
-static void xdg_toplevel_request_maximize(struct wl_listener *listener,void *data){}
+    server->grab_geobox=*geo_box;
+    server->grab_geobox.x+=toplevel->scene_tree->node.x;
+    server->grab_geobox.y+=toplevel->scene_tree->node.y;
 
-static void xdg_toplevel_request_fullscreen(struct wl_listener *listener,void *data){}
+    server->resize_edges=edges;
+  }
+}
+
+static void xdg_toplevel_request_move(struct wl_listener *listener,void *data){
+  //raised when a client would like to begin an interactive move
+  //TODO: prevent the client from requesting this whenever they want
+  struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_move);
+  begin_interactive(toplevel,SANDWL_CURSOR_MOVE,0);
+}
+
+static void xdg_toplevel_request_resize(struct wl_listener *listener,void *data){
+}
+
+static void xdg_toplevel_request_maximize(struct wl_listener *listener,void *data){
+}
+
+static void xdg_toplevel_request_fullscreen(struct wl_listener *listener,void *data){
+}
+
+static void xdg_toplevel_destroy(struct wl_listener *listener,void *data){
+}
 
 static void server_new_xdg_toplevel(struct wl_listener *listener,void *data){
   //raised when a client creates a new toplevel/application window
@@ -315,23 +351,138 @@ static void server_new_xdg_popup(struct wl_listener *listener,void *data){
     //off-screen, for example
     wlr_xdg_surface_schedule_configure(popup->xdg_popup->base);
   }
-
 }
 
 
-static void server_cursor_motion(struct wl_listener *listener,void *data){}
+//return the topmost node in the scene at a given layout coords
+static struct sandwl_toplevel *desktop_toplevel_at(
+  struct sandwl_server *server,double lx,double ly,
+  struct wlr_surface **surface,double*sx,double*sy){
+  struct wlr_scene_node *node=wlr_scene_node_at(&server->scene->tree.node,lx,ly,sx,sy);
+  if(node==NULL||node->type!=WLR_SCENE_NODE_BUFFER){
+    return NULL;
+  }
+  struct wlr_scene_buffer *scene_buffer=wlr_scene_buffer_from_node(node);
+  struct wlr_scene_surface *scene_surface=wlr_scene_surface_try_from_buffer(scene_buffer);
+  if(!scene_surface){
+    return NULL;
+  }
 
-static void server_cursor_motion_absolute(struct wl_listener *listener,void *data){}
+  *surface=scene_surface->surface;
+  //find the node corresponding to the sandwl_toplevel at the root of this surface tree
+  struct wlr_scene_tree *tree=node->parent;
+  while(tree!=NULL&&tree->node.data==NULL){
+    tree=tree->node.parent;
+  }
+  return tree->node.data;
+}
 
-static void server_cursor_button(struct wl_listener *listener,void *data){}
 
-static void server_cursor_axis(struct wl_listener *listener,void *data){}
+static void process_cursor_resize(struct sandwl_server *server){
+  //TODO:resizing windows
+}
 
-static void server_cursor_frame(struct wl_listener *listener,void *data){}
+static void process_cursor_move(struct sandwl_server *server){
+  struct sandwl_toplevel *toplevel=server->grabbed_toplevel;
+  wlr_scene_node_set_position(&toplevel->scene_tree->node,
+    server->cursor->x-server->grab_x,server->cursor->y-server->grab_y);
+}
+
+static void process_cursor_motion(struct sandwl_server *server,uint32_t time){
+  //if the mode is non-passthrough, delegate to those functions
+  if(server->cursor_mode==SANDWL_CURSOR_MOVE){
+    process_cursor_move(server);
+    return;
+  }else if(server->cursor_mode==SANDWL_CURSOR_RESIZE){
+    process_cursor_resize(server);
+    return;
+  }
+
+  //otherwise, find the toplevel under the pointer and send the event along
+  double sx,sy;
+  struct wlr_surface *surface=NULL;
+  struct sandwl_toplevel *toplevel=desktop_toplevel_at(server,server->cursor->x,
+    server->cursor->y,&surface, &sx,&sy);
+  if(!toplevel){
+    wlr_cursor_set_xcursor(server->cursor,server->cursor_mgr,"default");
+  }
+  if(surface){
+    //gives the surface pointer focus
+    wlr_seat_pointer_notify_enter(server->seat,surface,sx,sy);
+    //gives the surface the pointer motion event
+    wlr_seat_pointer_notify_motion(server->seat,time,sx,sy);
+  }else{
+    //clears pointer focus
+    wlr_seat_pointer_clear_focus(server->seat);
+  }
+}
+
+static void server_cursor_motion(struct wl_listener *listener,void *data){
+  //forwarded by the cursor when a pointer emits _relative_ pointer motion event(ej a delta)
+  struct sandwl_server *server=wl_container_of(listener,server,cursor_motion);
+  struct wlr_pointer_motion_event *event=data;
+  wlr_cursor_move(server->cursor,&event->pointer->base,event->delta_x,event->delta_y);
+  process_cursor_motion(server,event->time_msec);
+}
+
+static void server_cursor_motion_absolute(struct wl_listener *listener,void *data){
+  //this event is forwarded by the cursor when a pointer emits an _absolute_ motion event
+  //from 0..1 on each axis
+  //this happens when wlroots is running under a Wayland window rather than KMS+DRM
+  //you could enter the window from any edge, so we have to warp the mouse there
+  //there is also some hardware which
+  //emits these events
+  struct sandwl_server *server=wl_container_of(listener,server,cursor_motion_absolute);
+  struct wlr_pointer_motion_absolute_event *event=data;
+  wlr_cursor_warp_absolute(server->cursor,&event->pointer->base,event->x,event->y);
+  process_cursor_motion(server,event->time_msec);
+}
+
+static void server_cursor_button(struct wl_listener *listener,void *data){
+  //forwarded by the cursor when a pointer emits a button event
+  struct sandwl_server *server=wl_container_of(listener,server,cursor_button);
+  struct wlr_pointer_button_event *event=data;
+  //notify the client with pointer focus
+  wlr_seat_pointer_notify_button(server->seat,event->time_msec,event->button,event->state);
+  if(event->state==WL_POINTER_BUTTON_STATE_RELEASED){
+    //if button released exit interactive move/resize mode
+    reset_cursor_mode(server);
+  }else{
+    //focus that client if the button was _pressed_
+    double sx,sy;
+    struct wlr_surface *surface=NULL;
+    struct sandwl_toplevel *toplevel=desktop_toplevel_at(server,
+      server->cursor->x,server->cursor->y,&surface,&sx,&sy);
+    focus_toplevel(toplevel);
+  }
+}
+
+static void server_cursor_axis(struct wl_listener *listener,void *data){
+  //forwarded by the cursor when a pointer emits an axis event
+  //for example when you move the scroll wheel
+  struct sandwl_server *server=wl_container_of(listener,server,cursor_axis);
+  struct wlr_pointer_axis_event *event=data;
+  //notify the client with pointer focus of the axis event
+  wlr_seat_pointer_notify_axis(server->seat,
+      event->time_msec,event->orientation,event->delta,
+      event->delta_discrete,event->source,event->relative_direction);
+}
+
+static void server_cursor_frame(struct wl_listener *listener,void *data){
+  //forwarded by the cursor whe a pointer emits an frame event
+  struct sandwl_server *server=wl_container_of(listener,server,cursor_frame);
+  //notify the client with pointer focus of the frame event
+  wlr_seat_pointer_notify_frame(server->seat);
+}
 
 
 
 static void keyboard_handle_modifiers(struct wl_listener *listener,void *data){
+  //raised on modifier pres
+  struct sandwl_keyboard *keyboard=wl_container_of(listener,keyboard,modifiers);
+  wlr_seat_set_keyboard(keyboard->server->seat,keyboard->wlr_keyboard);
+  //pass modifier to client
+  wlr_seat_keyboard_notify_modifiers(keyboard->server->seat,&keyboard->wlr_keyboard->modifiers);
 }
 
 static void keyboard_handle_key(struct wl_listener *listener,void *data){
@@ -353,15 +504,32 @@ static void keyboard_handle_key(struct wl_listener *listener,void *data){
     //handle system keybindings here, before giving them to toplevels
     //set 'handled' to true if keys get used
   }
+  //examble
+  if((modifiers&WLR_MODIFIER_ALT)&&event->state==WL_KEYBOARD_KEY_STATE_PRESSED){
+    for (int i=0;i<nsyms;i++){
+      switch(syms[i]){
+        case XKB_KEY_q:
+          if(fork()==0)
+            execl("/bin/sh","/bin/sh","-c","kitty",(void*)NULL);
+          break;
+        default:
+          break;
+      }
+    }
+  }
   if(!handled){
-    //pass keys to toplevels
+    //pass keys to client
     wlr_seat_set_keyboard(seat,keyboard->wlr_keyboard);
-    //how do i get a wlr_keyboard_modifiers?
-    //wlr_seat_keyboard_notify_modifiers(seat,modifiers);
     wlr_seat_keyboard_notify_key(seat,event->time_msec,event->keycode,event->state);
   }
 }
 static void keyboard_handle_destroy(struct wl_listener *listener,void *data){
+  struct sandwl_keyboard *keyboard=wl_container_of(listener,keyboard,destroy);
+  wl_list_remove(&keyboard->modifiers.link);
+  wl_list_remove(&keyboard->key.link);
+  wl_list_remove(&keyboard->destroy.link);
+  wl_list_remove(&keyboard->link);
+  free(keyboard);
 }
 
 static void server_new_keyboard(struct sandwl_server *server,struct wlr_input_device *device){
@@ -428,12 +596,31 @@ static void server_new_input(struct wl_listener *listener,void *data){
 }
 
 static void seat_request_cursor(struct wl_listener *listener,void *data){
+  struct sandwl_server *server=wl_container_of(listener,server,request_cursor);
+  //raised by the seat when a client provides a cursor image
+  struct wlr_seat_pointer_request_set_cursor_event *event=data;
+  struct wlr_seat_client *focused_client=server->seat->pointer_state.focused_client;
+  //can be sent by any client, so check to make sure this one actually has pointer focus first
+  if(focused_client==event->seat_client){
+    wlr_cursor_set_surface(server->cursor,event->surface,event->hotspot_x,event->hotspot_y);
+  }
 }
 
 static void seat_pointer_focus_change(struct wl_listener *listener,void *data){
+  struct sandwl_server *server = wl_container_of(listener,server,pointer_focus_change);
+  //raised when the pointer focus is changed, including when the client is closed
+  //set the cursor image to its default if target surface is NULL
+  struct wlr_seat_pointer_focus_change_event *event=data;
+  if(event->new_surface==NULL){
+    wlr_cursor_set_xcursor(server->cursor,server->cursor_mgr,"default");
+  }
 }
 
 static void seat_request_set_selection(struct wl_listener *listener,void *data){
+  //raised by the seat when a client wants to set the selection, usually when the user copies something
+  struct sandwl_server *server=wl_container_of(listener,server,request_set_selection);
+  struct wlr_seat_request_set_selection_event *event=data;
+  wlr_seat_set_selection(server->seat,event->source,event->serial);
 }
 
 
@@ -554,7 +741,7 @@ int main(int argc, char *argv[]){
   setenv("WAYLAND_DISPLAY",socket,true);
   if(startup_cmd){
     if(fork()==0){
-      execl("/bin/sh","/bin/sh","-c",startup_cmd,(void *)NULL);
+      execl("/bin/sh","/bin/sh","-c",startup_cmd,(void*)NULL);
     }
   }
 
