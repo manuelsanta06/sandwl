@@ -1,1 +1,25 @@
-[]
+[
+  {
+    "file": "src/main.c",
+    "arguments": [
+      "/usr/sbin/cc",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Isrc",
+      "-MMD",
+      "-MP",
+      "-DVERSION=\"0.0.0\"",
+      "-I/usr/include/wlroots-0.20",
+      "-I/usr/include/pixman-1",
+      "-I/usr/include/libdrm",
+      "-c",
+      "src/main.c",
+      "-DWLR_USE_UNSTABLE",
+      "-o",
+      "build/main.o"
+    ],
+    "directory": "/home/santa/prog/c/compositor",
+    "output": "build/main.o"
+  }
+]

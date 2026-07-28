@@ -83,18 +83,18 @@ struct sandwl_output{
 };
 
 struct sandwl_toplevel{
-	struct wl_list          link;
-	struct sandwl_server    *server;
-	struct wlr_xdg_toplevel *xdg_toplevel;
-	struct wlr_scene_tree   *scene_tree;
-	struct wl_listener      map;
-	struct wl_listener      unmap;
-	struct wl_listener      commit;
-	struct wl_listener      destroy;
-	struct wl_listener      request_move;
-	struct wl_listener      request_resize;
-	struct wl_listener      request_maximize;
-	struct wl_listener      request_fullscreen;
+  struct wl_list          link;
+  struct sandwl_server    *server;
+  struct wlr_xdg_toplevel *xdg_toplevel;
+  struct wlr_scene_tree   *scene_tree;
+  struct wl_listener      map;
+  struct wl_listener      unmap;
+  struct wl_listener      commit;
+  struct wl_listener      destroy;
+  struct wl_listener      request_move;
+  struct wl_listener      request_resize;
+  struct wl_listener      request_maximize;
+  struct wl_listener      request_fullscreen;
 };
 
 struct sandwl_popup{
@@ -104,13 +104,13 @@ struct sandwl_popup{
 };
 
 struct sandwl_keyboard{
-	struct wl_list          link;
-	struct sandwl_server    *server;
-	struct wlr_keyboard     *wlr_keyboard;
+  struct wl_list          link;
+  struct sandwl_server    *server;
+  struct wlr_keyboard     *wlr_keyboard;
 
-	struct wl_listener      modifiers;
-	struct wl_listener      key;
-	struct wl_listener      destroy;
+  struct wl_listener      modifiers;
+  struct wl_listener      key;
+  struct wl_listener      destroy;
 };
 
 
@@ -190,11 +190,73 @@ static void server_new_output(struct wl_listener *listener,void *data){
 }
 
 
-static void xdg_toplevel_map(struct wl_listener *listener,void *data){}
+static void focus_toplevel(struct sandwl_toplevel *toplevel){
+  /* Note: this function only deals with keyboard focus. */
+  if(toplevel==NULL){
+    return;
+  }
+  struct sandwl_server *server=toplevel->server;
+  struct wlr_seat *seat=server->seat;
+  struct wlr_surface *prev_surface=seat->keyboard_state.focused_surface;
+  struct wlr_surface *surface=toplevel->xdg_toplevel->base->surface;
+  if(prev_surface==surface)return;
 
-static void xdg_toplevel_unmap(struct wl_listener *listener,void *data){}
+  if(prev_surface){
+    //Deactivate the previously focused surface
+    struct wlr_xdg_toplevel *prev_toplevel=
+      wlr_xdg_toplevel_try_from_wlr_surface(prev_surface);
+    if(prev_toplevel!=NULL){
+      wlr_xdg_toplevel_set_activated(prev_toplevel,false);
+    }
+  }
+  struct wlr_keyboard *keyboard=wlr_seat_get_keyboard(seat);
+  //Move the toplevel to the front
+  wlr_scene_node_raise_to_top(&toplevel->scene_tree->node);
+  wl_list_remove(&toplevel->link);
+  wl_list_insert(&server->toplevels,&toplevel->link);
+  //Activate the new surface
+  wlr_xdg_toplevel_set_activated(toplevel->xdg_toplevel,true);
+  //Tell the seat to have the keyboard enter this surface
+  if(keyboard!=NULL){
+    wlr_seat_keyboard_notify_enter(seat,surface,
+      keyboard->keycodes,keyboard->num_keycodes,&keyboard->modifiers);
+  }
+}
 
-static void xdg_toplevel_commit(struct wl_listener *listener,void *data){}
+static void reset_cursor_mode(struct sandwl_server *server){
+  //Reset the cursor mode to passthrough
+  server->cursor_mode=SANDWL_CURSOR_PASSTHROUGH;
+  server->grabbed_toplevel=NULL;
+}
+
+
+static void xdg_toplevel_map(struct wl_listener *listener,void *data){
+  //called when surface is ready to display
+  struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,map);
+  wl_list_insert(&toplevel->server->toplevels, &toplevel->link);
+  focus_toplevel(toplevel);
+}
+
+static void xdg_toplevel_unmap(struct wl_listener *listener,void *data){
+  //Called when the surface is unmapped//hidden
+  struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,unmap);
+  //Reset the cursor mode if the grabbed toplevel got unmapped
+  if(toplevel==toplevel->server->grabbed_toplevel)
+    reset_cursor_mode(toplevel->server);
+
+  wl_list_remove(&toplevel->link);
+}
+
+static void xdg_toplevel_commit(struct wl_listener *listener,void *data){
+  //Called when a new surface state is committed
+  struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,commit);
+
+  if(toplevel->xdg_toplevel->base->initial_commit){
+    //the compositor must reply with a configure so the client can map the surface
+    //configures the xdg_toplevel with 0,0 size to let the client pick the dimensions
+    wlr_xdg_toplevel_set_size(toplevel->xdg_toplevel,0,0);
+  }
+}
 
 
 static void xdg_toplevel_destroy(struct wl_listener *listener,void *data){}
@@ -210,36 +272,36 @@ static void xdg_toplevel_request_fullscreen(struct wl_listener *listener,void *d
 
 static void server_new_xdg_toplevel(struct wl_listener *listener,void *data){
   //raised when a client creates a new toplevel/application window
-	struct sandwl_server *server=wl_container_of(listener,server,new_xdg_toplevel);
-	struct wlr_xdg_toplevel *xdg_toplevel=data;
+  struct sandwl_server *server=wl_container_of(listener,server,new_xdg_toplevel);
+  struct wlr_xdg_toplevel *xdg_toplevel=data;
 
-	struct sandwl_toplevel *toplevel=calloc(1,sizeof(*toplevel));
-	toplevel->server=server;
-	toplevel->xdg_toplevel=xdg_toplevel;
-	toplevel->scene_tree=
-		wlr_scene_xdg_surface_create(&toplevel->server->scene->tree,xdg_toplevel->base);
-	toplevel->scene_tree->node.data=toplevel;
-	xdg_toplevel->base->data=toplevel->scene_tree;
+  struct sandwl_toplevel *toplevel=calloc(1,sizeof(*toplevel));
+  toplevel->server=server;
+  toplevel->xdg_toplevel=xdg_toplevel;
+  toplevel->scene_tree=
+    wlr_scene_xdg_surface_create(&toplevel->server->scene->tree,xdg_toplevel->base);
+  toplevel->scene_tree->node.data=toplevel;
+  xdg_toplevel->base->data=toplevel->scene_tree;
 
-	//Listen to most of events it can emit
-	toplevel->map.notify=xdg_toplevel_map;
-	wl_signal_add(&xdg_toplevel->base->surface->events.map,&toplevel->map);
-	toplevel->unmap.notify=xdg_toplevel_unmap;
-	wl_signal_add(&xdg_toplevel->base->surface->events.unmap,&toplevel->unmap);
-	toplevel->commit.notify=xdg_toplevel_commit;
-	wl_signal_add(&xdg_toplevel->base->surface->events.commit,&toplevel->commit);
+  //Listen to most of events it can emit
+  toplevel->map.notify=xdg_toplevel_map;
+  wl_signal_add(&xdg_toplevel->base->surface->events.map,&toplevel->map);
+  toplevel->unmap.notify=xdg_toplevel_unmap;
+  wl_signal_add(&xdg_toplevel->base->surface->events.unmap,&toplevel->unmap);
+  toplevel->commit.notify=xdg_toplevel_commit;
+  wl_signal_add(&xdg_toplevel->base->surface->events.commit,&toplevel->commit);
 
-	toplevel->destroy.notify = xdg_toplevel_destroy;
-	wl_signal_add(&xdg_toplevel->events.destroy, &toplevel->destroy);
+  toplevel->destroy.notify = xdg_toplevel_destroy;
+  wl_signal_add(&xdg_toplevel->events.destroy, &toplevel->destroy);
 
-	toplevel->request_move.notify = xdg_toplevel_request_move;
-	wl_signal_add(&xdg_toplevel->events.request_move, &toplevel->request_move);
-	toplevel->request_resize.notify = xdg_toplevel_request_resize;
-	wl_signal_add(&xdg_toplevel->events.request_resize, &toplevel->request_resize);
-	toplevel->request_maximize.notify = xdg_toplevel_request_maximize;
-	wl_signal_add(&xdg_toplevel->events.request_maximize, &toplevel->request_maximize);
-	toplevel->request_fullscreen.notify = xdg_toplevel_request_fullscreen;
-	wl_signal_add(&xdg_toplevel->events.request_fullscreen, &toplevel->request_fullscreen);
+  toplevel->request_move.notify = xdg_toplevel_request_move;
+  wl_signal_add(&xdg_toplevel->events.request_move, &toplevel->request_move);
+  toplevel->request_resize.notify = xdg_toplevel_request_resize;
+  wl_signal_add(&xdg_toplevel->events.request_resize, &toplevel->request_resize);
+  toplevel->request_maximize.notify = xdg_toplevel_request_maximize;
+  wl_signal_add(&xdg_toplevel->events.request_maximize, &toplevel->request_maximize);
+  toplevel->request_fullscreen.notify = xdg_toplevel_request_fullscreen;
+  wl_signal_add(&xdg_toplevel->events.request_fullscreen, &toplevel->request_fullscreen);
 }
 
 static void server_new_xdg_popup(struct wl_listener *listener,void *data){
@@ -268,13 +330,111 @@ static void server_cursor_axis(struct wl_listener *listener,void *data){}
 static void server_cursor_frame(struct wl_listener *listener,void *data){}
 
 
-static void server_new_input(struct wl_listener *listener,void *data){}
 
-static void seat_request_cursor(struct wl_listener *listener,void *data){}
+static void keyboard_handle_modifiers(struct wl_listener *listener,void *data){
+}
 
-static void seat_pointer_focus_change(struct wl_listener *listener,void *data){}
+static void keyboard_handle_key(struct wl_listener *listener,void *data){
+  //raised on key pres
+  struct sandwl_keyboard *keyboard=wl_container_of(listener,keyboard,key);
+  struct sandwl_server *server=keyboard->server;
+  struct wlr_keyboard_key_event *event=data;
+  struct wlr_seat *seat=server->seat;
 
-static void seat_request_set_selection(struct wl_listener *listener,void *data){}
+  //Translate from libinput keycode to xkbcommon
+  uint32_t keycode=event->keycode+8;
+  //Get a list of keysyms based on the keymap for this keyboard
+  const xkb_keysym_t *syms;
+  int nsyms=xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state,keycode,&syms);
+
+  bool handled=false;
+  uint32_t modifiers=wlr_keyboard_get_modifiers(keyboard->wlr_keyboard);
+  if(false){
+    //handle system keybindings here, before giving them to toplevels
+    //set 'handled' to true if keys get used
+  }
+  if(!handled){
+    //pass keys to toplevels
+    wlr_seat_set_keyboard(seat,keyboard->wlr_keyboard);
+    //how do i get a wlr_keyboard_modifiers?
+    //wlr_seat_keyboard_notify_modifiers(seat,modifiers);
+    wlr_seat_keyboard_notify_key(seat,event->time_msec,event->keycode,event->state);
+  }
+}
+static void keyboard_handle_destroy(struct wl_listener *listener,void *data){
+}
+
+static void server_new_keyboard(struct sandwl_server *server,struct wlr_input_device *device){
+  struct wlr_keyboard *wlr_keyboard=wlr_keyboard_from_input_device(device);
+  struct sandwl_keyboard *keyboard=calloc(1,sizeof(*keyboard));
+  keyboard->server=server;
+  keyboard->wlr_keyboard=wlr_keyboard;
+
+  //prepare an XKB keymap and assign it to the keyboard. assumes default layout
+  struct xkb_context *context=xkb_context_new(XKB_CONTEXT_NO_FLAGS);
+  struct xkb_keymap *keymap=xkb_keymap_new_from_names(context,NULL,XKB_KEYMAP_COMPILE_NO_FLAGS);
+
+  wlr_keyboard_set_keymap(wlr_keyboard,keymap);
+  xkb_keymap_unref(keymap);
+  xkb_context_unref(context);
+  wlr_keyboard_set_repeat_info(wlr_keyboard,25,600);
+
+  //listeners for keyboard events
+  keyboard->modifiers.notify=keyboard_handle_modifiers;
+  wl_signal_add(&wlr_keyboard->events.modifiers,&keyboard->modifiers);
+  keyboard->key.notify=keyboard_handle_key;
+  wl_signal_add(&wlr_keyboard->events.key,&keyboard->key);
+  keyboard->destroy.notify=keyboard_handle_destroy;
+  wl_signal_add(&device->events.destroy, &keyboard->destroy);
+
+  wlr_seat_set_keyboard(server->seat,keyboard->wlr_keyboard);
+
+  //add the keyboard to list of keyboards
+  wl_list_insert(&server->keyboards,&keyboard->link);
+}
+
+static void server_new_pointer(struct sandwl_server *server,struct wlr_input_device *device){
+  //pointer configuration should be applied here
+  wlr_cursor_attach_input_device(server->cursor,device);
+}
+
+static void server_new_input(struct wl_listener *listener,void *data){
+  //raised when a new input becomes available
+  struct sandwl_server *server=wl_container_of(listener,server,new_input);
+  struct wlr_input_device *device=data;
+  switch(device->type){
+    case WLR_INPUT_DEVICE_KEYBOARD:
+      server_new_keyboard(server,device);
+      break;
+    case WLR_INPUT_DEVICE_POINTER:
+      server_new_pointer(server,device);
+      break;
+    // case WLR_INPUT_DEVICE_SWITCH:
+    //   break;
+    // case WLR_INPUT_DEVICE_TABLET:
+    //   break;
+    // case WLR_INPUT_DEVICE_TABLET_PAD:
+    //   break;
+    // case WLR_INPUT_DEVICE_TOUCH:
+    //   break;
+    default:
+      break;
+  }
+  uint32_t caps=WL_SEAT_CAPABILITY_POINTER;
+  if(!wl_list_empty(&server->keyboards)){
+    caps|=WL_SEAT_CAPABILITY_KEYBOARD;
+  }
+  wlr_seat_set_capabilities(server->seat,caps);
+}
+
+static void seat_request_cursor(struct wl_listener *listener,void *data){
+}
+
+static void seat_pointer_focus_change(struct wl_listener *listener,void *data){
+}
+
+static void seat_request_set_selection(struct wl_listener *listener,void *data){
+}
 
 
 int main(int argc, char *argv[]){
