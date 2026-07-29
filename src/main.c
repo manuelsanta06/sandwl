@@ -295,15 +295,45 @@ static void xdg_toplevel_request_move(struct wl_listener *listener,void *data){
 }
 
 static void xdg_toplevel_request_resize(struct wl_listener *listener,void *data){
+  //raised when a client would like to begin an interactive resize
+  //TODO: prevent the client from requesting this whenever they want
+  struct wlr_xdg_toplevel_resize_event *event=data;
+  struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_resize);
+  begin_interactive(toplevel,SANDWL_CURSOR_RESIZE,event->edges);
 }
 
+//TODO:
 static void xdg_toplevel_request_maximize(struct wl_listener *listener,void *data){
+  //raised when a client would like to maximize
+  struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_maximize);
+  if(toplevel->xdg_toplevel->base->initialized){
+    wlr_xdg_surface_schedule_configure(toplevel->xdg_toplevel->base);
+  }
 }
 
+//TODO:
 static void xdg_toplevel_request_fullscreen(struct wl_listener *listener,void *data){
+  //raised when a client would like to fullscreen
+  struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_fullscreen);
+  if(toplevel->xdg_toplevel->base->initialized){
+    wlr_xdg_surface_schedule_configure(toplevel->xdg_toplevel->base);
+  }
 }
 
 static void xdg_toplevel_destroy(struct wl_listener *listener,void *data){
+  //Called when the xdg_toplevel is destroyed
+  struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,destroy);
+
+  wl_list_remove(&toplevel->map.link);
+  wl_list_remove(&toplevel->unmap.link);
+  wl_list_remove(&toplevel->commit.link);
+  wl_list_remove(&toplevel->destroy.link);
+  wl_list_remove(&toplevel->request_move.link);
+  wl_list_remove(&toplevel->request_resize.link);
+  wl_list_remove(&toplevel->request_maximize.link);
+  wl_list_remove(&toplevel->request_fullscreen.link);
+
+  free(toplevel);
 }
 
 static void server_new_xdg_toplevel(struct wl_listener *listener,void *data){
