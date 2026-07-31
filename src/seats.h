@@ -25,32 +25,8 @@
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
 
-#include "types.h"
+void seat_request_cursor(struct wl_listener *listener,void *data);
 
-static void seat_request_cursor(struct wl_listener *listener,void *data){
-  struct sandwl_server *server=wl_container_of(listener,server,request_cursor);
-  //raised by the seat when a client provides a cursor image
-  struct wlr_seat_pointer_request_set_cursor_event *event=data;
-  struct wlr_seat_client *focused_client=server->seat->pointer_state.focused_client;
-  //can be sent by any client, so check to make sure this one actually has pointer focus first
-  if(focused_client==event->seat_client){
-    wlr_cursor_set_surface(server->cursor,event->surface,event->hotspot_x,event->hotspot_y);
-  }
-}
+void seat_pointer_focus_change(struct wl_listener *listener,void *data);
 
-static void seat_pointer_focus_change(struct wl_listener *listener,void *data){
-  struct sandwl_server *server = wl_container_of(listener,server,pointer_focus_change);
-  //raised when the pointer focus is changed, including when the client is closed
-  //set the cursor image to its default if target surface is NULL
-  struct wlr_seat_pointer_focus_change_event *event=data;
-  if(event->new_surface==NULL){
-    wlr_cursor_set_xcursor(server->cursor,server->cursor_mgr,"default");
-  }
-}
-
-static void seat_request_set_selection(struct wl_listener *listener,void *data){
-  //raised by the seat when a client wants to set the selection, usually when the user copies something
-  struct sandwl_server *server=wl_container_of(listener,server,request_set_selection);
-  struct wlr_seat_request_set_selection_event *event=data;
-  wlr_seat_set_selection(server->seat,event->source,event->serial);
-}
+void seat_request_set_selection(struct wl_listener *listener,void *data);

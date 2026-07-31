@@ -1,9 +1,5 @@
-#include <assert.h>
 #include <getopt.h>
-#include <stdbool.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <time.h>
 #include <unistd.h>
 #include <wayland-server-core.h>
 #include <wlr/backend.h>
@@ -34,10 +30,7 @@
 #include "serverKeyboard.h"
 
 
-
-///////////////////////////////////////////
-
-static void server_new_input(struct wl_listener *listener,void *data){
+void server_new_input(struct wl_listener *listener,void *data){
   //raised when a new input becomes available
   struct sandwl_server *server=wl_container_of(listener,server,new_input);
   struct wlr_input_device *device=data;
@@ -66,27 +59,32 @@ static void server_new_input(struct wl_listener *listener,void *data){
   wlr_seat_set_capabilities(server->seat,caps);
 }
 
-///////////////////////////////////////////
-
-
+void printHelp(char* programName){
+  printf("Usage: %s\n",programName);
+  printf("\t-s [command]  runs [command] after starting the compositor\n");
+  printf("\t-v            sets verbosity to DEBUG level\n");
+}
 
 int main(int argc, char *argv[]){
-  wlr_log_init(WLR_DEBUG,NULL);
+  wlr_log_init(WLR_ERROR,NULL);
   char *startup_cmd=NULL;
 
   int c;
-  while((c=getopt(argc,argv,"s:h"))!=-1){
+  while((c=getopt(argc,argv,"vs:h"))!=-1){
     switch(c){
+      case 'v':
+        wlr_log_init(WLR_DEBUG,NULL);
+        break;
       case 's':
         startup_cmd=optarg;
         break;
       default:
-        printf("Usage: %s [-s startup command]\n",argv[0]);
+        printHelp(argv[0]);
         return 0;
     }
   }
   if(optind<argc){
-    printf("Usage: %s [-s startup command]\n",argv[0]);
+    printHelp(argv[0]);
     return 0;
   }
 
