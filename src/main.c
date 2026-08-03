@@ -17,6 +17,8 @@
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/util/log.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
+#include <wlr/types/wlr_xdg_output_v1.h>
 
 #include "types.h"
 #include "seats.h"
@@ -24,6 +26,7 @@
 #include "xdgToplevel.h"
 #include "serverCursor.h"
 #include "serverKeyboard.h"
+#include "layerShell.h"
 
 
 void server_new_input(struct wl_listener *listener,void *data){
@@ -113,6 +116,8 @@ int main(int argc, char *argv[]){
   //creates an output layout, saves the positions of outputs
   server.output_layout=wlr_output_layout_create(server.wl_display);
 
+  wlr_xdg_output_manager_v1_create(server.wl_display,server.output_layout);
+
   //notify for new outputs
   wl_list_init(&server.outputs);
   server.new_output.notify=server_new_output;
@@ -130,6 +135,11 @@ int main(int argc, char *argv[]){
   wl_signal_add(&server.xdg_shell->events.new_toplevel,&server.new_xdg_toplevel);
   server.new_xdg_popup.notify=server_new_xdg_popup;
   wl_signal_add(&server.xdg_shell->events.new_popup,&server.new_xdg_popup);
+
+  //layer-shell
+  server.layer_shell=wlr_layer_shell_v1_create(server.wl_display,4);
+  server.new_layer_surface.notify=server_new_layer_surface;
+  wl_signal_add(&server.layer_shell->events.new_surface,&server.new_layer_surface);
 
   server.cursor=wlr_cursor_create();
   wlr_cursor_attach_output_layout(server.cursor,server.output_layout);

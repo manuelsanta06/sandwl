@@ -1,8 +1,8 @@
 #include <stdbool.h>
 #include <time.h>
 #include <stdlib.h>
-#include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_scene.h>
 
 #include "types.h"
@@ -65,6 +65,12 @@ void server_new_output(struct wl_listener *listener,void *data){
   struct sandwl_output *output=calloc(1,sizeof(*output));
   output->wlr_output=wlr_output;
   output->server=server;
+
+  wlr_output->data=output;
+
+  for(int i=0;i<4;i++){
+    wl_list_init(&output->layers[i]);
+  }
 
   output->frame.notify=output_frame;
   wl_signal_add(&wlr_output->events.frame,&output->frame);
