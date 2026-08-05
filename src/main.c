@@ -19,6 +19,7 @@
 #include <wlr/util/log.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/types/wlr_xdg_output_v1.h>
+#include <wlr/types/wlr_viewporter.h>
 
 #include "types.h"
 #include "seats.h"
@@ -117,6 +118,7 @@ int main(int argc, char *argv[]){
   server.output_layout=wlr_output_layout_create(server.wl_display);
 
   wlr_xdg_output_manager_v1_create(server.wl_display,server.output_layout);
+  wlr_viewporter_create(server.wl_display);
 
   //notify for new outputs
   wl_list_init(&server.outputs);

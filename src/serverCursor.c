@@ -8,6 +8,7 @@
 #include "serverCursor.h"
 
 
+#include <wlr/util/log.h>
 void server_cursor_motion(struct wl_listener *listener,void *data){
   //forwarded by the cursor when a pointer emits _relative_ pointer motion event(ej a delta)
   struct sandwl_server *server=wl_container_of(listener,server,cursor_motion);

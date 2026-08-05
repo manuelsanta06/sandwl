@@ -51,20 +51,28 @@ struct sandwl_toplevel *desktop_toplevel_at(
   struct sandwl_server *server,double lx,double ly,
   struct wlr_surface **surface,double*sx,double*sy){
   struct wlr_scene_node *node=wlr_scene_node_at(&server->scene->tree.node,lx,ly,sx,sy);
-  if(node==NULL||node->type!=WLR_SCENE_NODE_BUFFER){
+  if(node==NULL||node->type!=WLR_SCENE_NODE_BUFFER)
     return NULL;
-  }
+
   struct wlr_scene_buffer *scene_buffer=wlr_scene_buffer_from_node(node);
   struct wlr_scene_surface *scene_surface=wlr_scene_surface_try_from_buffer(scene_buffer);
-  if(!scene_surface){
+  if(!scene_surface)
     return NULL;
-  }
 
   *surface=scene_surface->surface;
+
   //find the node corresponding to the sandwl_toplevel at the root of this surface tree
   struct wlr_scene_tree *tree=node->parent;
-  while(tree!=NULL&&tree->node.data==NULL){
+  while(tree!=NULL&&tree->node.data==NULL)
     tree=tree->node.parent;
-  }
+  if(tree==NULL)
+    return NULL;
+
+  struct wlr_surface *root_surface=wlr_surface_get_root_surface(*surface);
+  struct wlr_xdg_surface *xdg_surface=wlr_xdg_surface_try_from_wlr_surface(root_surface);
+  
+  if(!xdg_surface||xdg_surface->role!=WLR_XDG_SURFACE_ROLE_TOPLEVEL)
+    return NULL;
+  
   return tree->node.data;
 }

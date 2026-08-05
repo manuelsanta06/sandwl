@@ -59,6 +59,7 @@ struct sandwl_output{
   struct wl_list        link;
   struct sandwl_server  *server;
   struct wlr_output     *wlr_output;
+  struct wlr_box        usable_area;
   struct wl_list        layers[4];
   struct wl_listener    frame;
   struct wl_listener    request_state;
@@ -66,14 +67,15 @@ struct sandwl_output{
 };
 
 struct sandwl_layer_surface{
-  struct wl_list              link;
-  struct sandwl_server        *server;
-  struct wlr_layer_surface_v1 *layer_surface;
-  struct wlr_scene_tree       *scene_tree;
-  struct wl_listener          map;
-  struct wl_listener          unmap;
-  struct wl_listener          destroy;
-  struct wl_listener          surface_commit;
+  struct wl_list                    link;
+  struct sandwl_server              *server;
+  struct wlr_layer_surface_v1       *layer_surface;
+  struct wlr_scene_layer_surface_v1 *scene_layer_surface;
+  struct wlr_scene_tree             *scene_tree;
+  struct wl_listener                map;
+  struct wl_listener                unmap;
+  struct wl_listener                destroy;
+  struct wl_listener                surface_commit;
 };
 
 struct sandwl_toplevel{

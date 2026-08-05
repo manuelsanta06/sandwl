@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <wayland-util.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_scene.h>
@@ -6,7 +7,9 @@
 
 #include "types.h"
 #include "layerShell.h"
+#include "outputs.h"
 
+#include <wlr/util/log.h>
 static void layer_surface_map(struct wl_listener *listener,void *data){
   struct sandwl_layer_surface *layer_surface=wl_container_of(listener,layer_surface,map);
   struct sandwl_server *server=layer_surface->server;
@@ -53,17 +56,23 @@ static void layer_surface_commit(struct wl_listener *listener,void *data){
   struct wlr_layer_surface_v1 *wlr_layer_surface=layer_surface->layer_surface;
 
   if(wlr_layer_surface->initial_commit){
+    if(!wlr_layer_surface->output){
+      if(wl_list_empty(&layer_surface->server->outputs))return;
+      struct sandwl_output *firstOutput=wl_container_of(
+        &layer_surface->server->outputs.next,firstOutput,link);
+      wlr_layer_surface->output=firstOutput->wlr_output;
+    }
     uint32_t width=wlr_layer_surface->pending.desired_width;
     uint32_t height=wlr_layer_surface->pending.desired_height;
 
-    if(width==0&&wlr_layer_surface->output)
-      width=wlr_layer_surface->output->width;
-    if(height==0)
-      height=wlr_layer_surface->output->height;
+    if(width ==0)width=wlr_layer_surface->output->width;
+    if(height==0)height=wlr_layer_surface->output->height;
 
-    wlr_layer_surface_v1_configure(wlr_layer_surface, width, height);
+    wlr_layer_surface_v1_configure(wlr_layer_surface,width,height);
   }
-  //TODO:Exclusive Zones
+  if(wlr_layer_surface->output){
+    arrange_layers(wlr_layer_surface->output->data);
+  }
 }
 
 void server_new_layer_surface(struct wl_listener *listener,void *data){
@@ -74,7 +83,8 @@ void server_new_layer_surface(struct wl_listener *listener,void *data){
   layer_surface->server=server;
   layer_surface->layer_surface=wlr_layer_surface;
 
-  layer_surface->scene_tree=wlr_scene_layer_surface_v1_create(&server->scene->tree,wlr_layer_surface)->tree;
+  layer_surface->scene_layer_surface=wlr_scene_layer_surface_v1_create(&server->scene->tree,wlr_layer_surface);
+  layer_surface->scene_tree=layer_surface->scene_layer_surface->tree;
   
   layer_surface->scene_tree->node.data=layer_surface;
   wlr_layer_surface->data=layer_surface->scene_tree;

@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <time.h>
 #include <stdlib.h>
+#include <wayland-util.h>
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_output.h>
 #include <wlr/types/wlr_scene.h>
@@ -87,4 +88,20 @@ void server_new_output(struct wl_listener *listener,void *data){
     server->output_layout,wlr_output);
   struct wlr_scene_output *scene_output=wlr_scene_output_create(server->scene,wlr_output);
   wlr_scene_output_layout_add_output(server->scene_layout,l_output,scene_output);
+}
+
+void arrange_layers(struct sandwl_output *output){
+  struct wlr_box full={0};
+  wlr_output_layout_get_box(output->server->output_layout,output->wlr_output,&full);
+  
+  struct wlr_box usable=full;
+
+  for(int i=0;i<4;i++){
+    struct sandwl_layer_surface *layer;
+    wl_list_for_each(layer,&output->layers[i],link){
+      wlr_scene_layer_surface_v1_configure(layer->scene_layer_surface,&full,&usable);
+    }
+  }
+
+  output->usable_area=usable;
 }
