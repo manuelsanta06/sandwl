@@ -1,5 +1,7 @@
-#include <wlr/types/wlr_cursor.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/types/wlr_pointer.h>
+#include <wlr/types/wlr_cursor.h>
+#include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_seat.h>
 
 #include "types.h"
@@ -42,10 +44,32 @@ void server_cursor_button(struct wl_listener *listener,void *data){
   }else{
     //focus that client if the button was _pressed_
     double sx,sy;
-    struct wlr_surface *surface=NULL;
-    struct sandwl_toplevel *toplevel=desktop_toplevel_at(server,
-      server->cursor->x,server->cursor->y,&surface,&sx,&sy);
-    focus_toplevel(toplevel);
+    struct wlr_scene_node *node=wlr_scene_node_at(&server->scene->tree.node,
+      server->cursor->x,server->cursor->y,&sx,&sy);
+
+    if(node&&node->type==WLR_SCENE_NODE_BUFFER){
+      struct wlr_surface *root_surface=wlr_surface_get_root_surface(
+        wlr_scene_surface_try_from_buffer(wlr_scene_buffer_from_node(node))->surface);
+      struct wlr_layer_surface_v1 *layer=wlr_layer_surface_v1_try_from_wlr_surface(root_surface);
+      if(layer&&layer->current.keyboard_interactive){
+        struct wlr_keyboard *keyboard = wlr_seat_get_keyboard(server->seat);
+        if(keyboard){
+          wlr_seat_keyboard_notify_enter(server->seat,root_surface,
+            keyboard->keycodes,keyboard->num_keycodes,&keyboard->modifiers);
+        }
+      }else{
+        struct wlr_surface *surface=NULL;
+        struct sandwl_toplevel *toplevel=desktop_toplevel_at(server,
+          server->cursor->x,server->cursor->y,&surface,&sx,&sy);
+        if(toplevel)focus_toplevel(toplevel);
+        else{
+        }
+      }
+    }
+
+    // struct sandwl_toplevel *toplevel=desktop_toplevel_at(server,
+    //   server->cursor->x,server->cursor->y,&surface,&sx,&sy);
+    // focus_toplevel(toplevel);
   }
 }
 

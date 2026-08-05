@@ -129,6 +129,12 @@ int main(int argc, char *argv[]){
   server.scene=wlr_scene_create();
   server.scene_layout=wlr_scene_attach_output_layout(server.scene,server.output_layout);
 
+  server.scene_background=wlr_scene_tree_create(&server.scene->tree);
+  server.scene_bottom=wlr_scene_tree_create(&server.scene->tree);
+  server.scene_toplevel=wlr_scene_tree_create(&server.scene->tree);
+  server.scene_top=wlr_scene_tree_create(&server.scene->tree);
+  server.scene_overlay=wlr_scene_tree_create(&server.scene->tree);
+
 
   //Set up xdg-shell version 3, who manages applications windows
   wl_list_init(&server.toplevels);

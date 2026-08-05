@@ -122,8 +122,7 @@ void server_new_xdg_toplevel(struct wl_listener *listener,void *data){
   struct sandwl_toplevel *toplevel=calloc(1,sizeof(*toplevel));
   toplevel->server=server;
   toplevel->xdg_toplevel=xdg_toplevel;
-  toplevel->scene_tree=
-    wlr_scene_xdg_surface_create(&toplevel->server->scene->tree,xdg_toplevel->base);
+  toplevel->scene_tree=wlr_scene_xdg_surface_create(toplevel->server->scene_toplevel,xdg_toplevel->base);
   toplevel->scene_tree->node.data=toplevel;
   xdg_toplevel->base->data=toplevel->scene_tree;
 

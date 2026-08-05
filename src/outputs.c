@@ -69,9 +69,7 @@ void server_new_output(struct wl_listener *listener,void *data){
 
   wlr_output->data=output;
 
-  for(int i=0;i<4;i++){
-    wl_list_init(&output->layers[i]);
-  }
+  for(int i=0;i<4;i++)wl_list_init(&output->layers[i]);
 
   output->frame.notify=output_frame;
   wl_signal_add(&wlr_output->events.frame,&output->frame);

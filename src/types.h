@@ -19,6 +19,12 @@ struct sandwl_server{
   struct wlr_scene                *scene;
   struct wlr_scene_output_layout  *scene_layout;
 
+  struct wlr_scene_tree           *scene_background;
+  struct wlr_scene_tree           *scene_bottom;
+  struct wlr_scene_tree           *scene_toplevel;
+  struct wlr_scene_tree           *scene_top;
+  struct wlr_scene_tree           *scene_overlay;
+
   struct wlr_xdg_shell            *xdg_shell;
   struct wl_listener              new_xdg_toplevel;
   struct wl_listener              new_xdg_popup;

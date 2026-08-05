@@ -59,7 +59,7 @@ static void layer_surface_commit(struct wl_listener *listener,void *data){
     if(!wlr_layer_surface->output){
       if(wl_list_empty(&layer_surface->server->outputs))return;
       struct sandwl_output *firstOutput=wl_container_of(
-        &layer_surface->server->outputs.next,firstOutput,link);
+        layer_surface->server->outputs.next,firstOutput,link);
       wlr_layer_surface->output=firstOutput->wlr_output;
     }
     uint32_t width=wlr_layer_surface->pending.desired_width;
@@ -83,7 +83,23 @@ void server_new_layer_surface(struct wl_listener *listener,void *data){
   layer_surface->server=server;
   layer_surface->layer_surface=wlr_layer_surface;
 
-  layer_surface->scene_layer_surface=wlr_scene_layer_surface_v1_create(&server->scene->tree,wlr_layer_surface);
+  struct wlr_scene_tree *parent_tree;
+  switch(wlr_layer_surface->pending.layer){
+    case ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND:
+      parent_tree=server->scene_background;
+      break;
+    case ZWLR_LAYER_SHELL_V1_LAYER_BOTTOM:
+      parent_tree=server->scene_bottom;
+      break;
+    case ZWLR_LAYER_SHELL_V1_LAYER_TOP:
+      parent_tree=server->scene_top;
+      break;
+    case ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY:
+      parent_tree=server->scene_overlay;
+      break;
+  }
+
+  layer_surface->scene_layer_surface=wlr_scene_layer_surface_v1_create(parent_tree,wlr_layer_surface);
   layer_surface->scene_tree=layer_surface->scene_layer_surface->tree;
   
   layer_surface->scene_tree->node.data=layer_surface;
