@@ -137,19 +137,24 @@ void server_new_xdg_toplevel(struct wl_listener *listener,void *data){
   toplevel->destroy.notify = xdg_toplevel_destroy;
   wl_signal_add(&xdg_toplevel->events.destroy, &toplevel->destroy);
 
-  toplevel->request_move.notify = xdg_toplevel_request_move;
-  wl_signal_add(&xdg_toplevel->events.request_move, &toplevel->request_move);
-  toplevel->request_resize.notify = xdg_toplevel_request_resize;
-  wl_signal_add(&xdg_toplevel->events.request_resize, &toplevel->request_resize);
-  toplevel->request_maximize.notify = xdg_toplevel_request_maximize;
-  wl_signal_add(&xdg_toplevel->events.request_maximize, &toplevel->request_maximize);
-  toplevel->request_fullscreen.notify = xdg_toplevel_request_fullscreen;
-  wl_signal_add(&xdg_toplevel->events.request_fullscreen, &toplevel->request_fullscreen);
+  toplevel->request_move.notify=xdg_toplevel_request_move;
+  wl_signal_add(&xdg_toplevel->events.request_move,&toplevel->request_move);
+  toplevel->request_resize.notify=xdg_toplevel_request_resize;
+  wl_signal_add(&xdg_toplevel->events.request_resize,&toplevel->request_resize);
+  toplevel->request_maximize.notify=xdg_toplevel_request_maximize;
+  wl_signal_add(&xdg_toplevel->events.request_maximize,&toplevel->request_maximize);
+  toplevel->request_fullscreen.notify=xdg_toplevel_request_fullscreen;
+  wl_signal_add(&xdg_toplevel->events.request_fullscreen,&toplevel->request_fullscreen);
 }
 
 void server_new_xdg_popup(struct wl_listener *listener,void *data){
   //Called when a new surface state is committed
   struct sandwl_popup *popup=wl_container_of(listener,popup,commit);
+  struct wlr_xdg_popup *xdg_popup=data;
+  struct wlr_xdg_surface *parent=wlr_xdg_surface_try_from_wlr_surface(xdg_popup->parent);
+
+  if(!parent)return;
+
   if(popup->xdg_popup->base->initial_commit){
     //When an xdg_surface performs an initial commit, the compositor must
     //reply with a configure so the client can map the surface

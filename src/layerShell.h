@@ -3,6 +3,10 @@
 #include <wlr/types/wlr_scene.h>
 
 
+static void popup_destroy(struct wl_listener *listener, void *data);
+static void popup_commit(struct wl_listener *listener, void *data);
+static void layer_surface_new_popup(struct wl_listener *listener, void *data);
+
 static void layer_surface_map(struct wl_listener *listener,void *data);
 static void layer_surface_unmap(struct wl_listener *listener,void *data);
 static void layer_surface_destroy(struct wl_listener *listener,void *data);

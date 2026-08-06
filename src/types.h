@@ -82,6 +82,7 @@ struct sandwl_layer_surface{
   struct wl_listener                unmap;
   struct wl_listener                destroy;
   struct wl_listener                surface_commit;
+  struct wl_listener                new_popup;
 };
 
 struct sandwl_toplevel{
@@ -103,6 +104,8 @@ struct sandwl_popup{
   struct wlr_xdg_popup    *xdg_popup;
   struct wl_listener      commit;
   struct wl_listener      destroy;
+  struct wl_listener      new_popup;
+  struct wl_listener      reposition;
 };
 
 struct sandwl_keyboard{
