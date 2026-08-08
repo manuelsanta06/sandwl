@@ -1,3 +1,4 @@
+#include <stdio.h>
 #include <stdlib.h>
 #include <wayland-util.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
@@ -34,7 +35,6 @@ void popup_reposition(struct wl_listener *listener,void *data){
 
 void layer_surface_new_popup(struct wl_listener *listener,void *data){
   struct sandwl_layer_surface *layer_surface=wl_container_of(listener,layer_surface,new_popup);
-  struct sandwl_server *server=layer_surface->server;
   struct wlr_xdg_popup *xdg_popup=data;
 
   struct sandwl_popup *popup=calloc(1,sizeof(*popup));
@@ -140,6 +140,9 @@ void server_new_layer_surface(struct wl_listener *listener,void *data){
       break;
     case ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY:
       parent_tree=server->scene_overlay;
+      break;
+    default:
+      parent_tree=NULL;
       break;
   }
 

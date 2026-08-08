@@ -5,13 +5,15 @@
 #include <wlr/util/box.h>
 
 
-enum sandwl_cursor_mode {
+enum sandwl_cursor_mode{
   SANDWL_CURSOR_PASSTHROUGH,
   SANDWL_CURSOR_MOVE,
   SANDWL_CURSOR_RESIZE,
 };
 
 struct sandwl_server{
+  struct wlr_session              *session;
+
   struct wl_display               *wl_display;
   struct wlr_backend              *backend;
   struct wlr_renderer             *renderer;

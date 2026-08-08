@@ -6,6 +6,7 @@
 #include <wlr/types/wlr_seat.h>
 #include <xkbcommon/xkbcommon-keysyms.h>
 #include <xkbcommon/xkbcommon.h>
+#include <wlr/backend/session.h>
 
 #include "types.h"
 #include "serverKeyboard.h"
@@ -34,6 +35,15 @@ void keyboard_handle_key(struct wl_listener *listener,void *data){
 
   bool handled=false;
   uint32_t modifiers=wlr_keyboard_get_modifiers(keyboard->wlr_keyboard);
+  if(!handled&&server->session){
+    for(int i=0;i<nsyms;i++){
+      if(syms[i]>=XKB_KEY_XF86Switch_VT_1&&syms[i]<=XKB_KEY_XF86Switch_VT_12){
+        wlr_session_change_vt(server->session,syms[i]-XKB_KEY_XF86Switch_VT_1+1);
+        handled=true;
+        break;
+      }
+    }
+  }
   if(false){
     //handle system keybindings here, before giving them to toplevels
     //set 'handled' to true if keys get used
