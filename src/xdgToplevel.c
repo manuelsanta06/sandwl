@@ -3,10 +3,12 @@
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/util/edges.h>
 
 #include "types.h"
 #include "utilies.h"
+#include "layerShell.h"
 #include "xdgToplevel.h"
 
 void xdg_toplevel_map(struct wl_listener *listener,void *data){
@@ -147,20 +149,28 @@ void server_new_xdg_toplevel(struct wl_listener *listener,void *data){
   wl_signal_add(&xdg_toplevel->events.request_fullscreen,&toplevel->request_fullscreen);
 }
 
-void server_new_xdg_popup(struct wl_listener *listener,void *data){
-  //Called when a new surface state is committed
-  struct sandwl_popup *popup=wl_container_of(listener,popup,commit);
+void server_new_xdg_popup(struct wl_listener *listener, void *data) {
+  struct sandwl_server *server=wl_container_of(listener,server,new_xdg_popup);
   struct wlr_xdg_popup *xdg_popup=data;
-  struct wlr_xdg_surface *parent=wlr_xdg_surface_try_from_wlr_surface(xdg_popup->parent);
 
+  if(!xdg_popup->parent)return;
+
+  struct wlr_xdg_surface *parent=wlr_xdg_surface_try_from_wlr_surface(xdg_popup->parent);
+  
   if(!parent)return;
 
-  if(popup->xdg_popup->base->initial_commit){
-    //When an xdg_surface performs an initial commit, the compositor must
-    //reply with a configure so the client can map the surface
-    //currently sends an empty configure. A more sophisticated compositor
-    //should change an xdg_popup's geometry to ensure it's not positioned
-    //off-screen, for example
-    wlr_xdg_surface_schedule_configure(popup->xdg_popup->base);
-  }
+  struct sandwl_popup *popup=calloc(1,sizeof(*popup));
+  popup->xdg_popup=xdg_popup;
+
+  struct wlr_scene_tree *parent_tree=parent->data;
+  struct wlr_scene_tree *popup_tree=wlr_scene_xdg_surface_create(parent_tree,xdg_popup->base);
+  
+  xdg_popup->base->data=popup_tree;
+
+  popup->destroy.notify=popup_destroy;
+  wl_signal_add(&xdg_popup->events.destroy,&popup->destroy);
+  popup->commit.notify=popup_commit;
+  wl_signal_add(&xdg_popup->base->surface->events.commit,&popup->commit);
+  popup->reposition.notify=popup_reposition;
+  wl_signal_add(&xdg_popup->events.reposition,&popup->reposition);
 }
