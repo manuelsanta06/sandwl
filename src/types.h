@@ -46,6 +46,7 @@ struct sandwl_server{
   struct wl_listener              request_cursor;
   struct wl_listener              pointer_focus_change;
   struct wl_listener              request_set_selection;
+  struct wl_listener              request_set_primary_selection;
   struct wl_list                  keyboards;
   enum sandwl_cursor_mode         cursor_mode;
   struct sandwl_toplevel          *grabbed_toplevel;

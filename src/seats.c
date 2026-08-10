@@ -1,5 +1,6 @@
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_data_device.h>
+#include <wlr/types/wlr_primary_selection.h>
 #include <wlr/types/wlr_seat.h>
 
 #include "types.h"
@@ -31,4 +32,10 @@ void seat_request_set_selection(struct wl_listener *listener,void *data){
   struct sandwl_server *server=wl_container_of(listener,server,request_set_selection);
   struct wlr_seat_request_set_selection_event *event=data;
   wlr_seat_set_selection(server->seat,event->source,event->serial);
+}
+
+void seat_request_set_primary_selection(struct wl_listener *listener,void *data){
+  struct sandwl_server *server=wl_container_of(listener,server,request_set_primary_selection);
+  struct wlr_seat_request_set_primary_selection_event *event=data;
+  wlr_seat_set_primary_selection(server->seat,event->source,event->serial);
 }

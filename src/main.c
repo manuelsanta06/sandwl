@@ -20,6 +20,8 @@
 #include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/types/wlr_xdg_output_v1.h>
 #include <wlr/types/wlr_viewporter.h>
+#include <wlr/types/wlr_primary_selection_v1.h>
+#include <wlr/types/wlr_data_control_v1.h>
 
 #include "types.h"
 #include "seats.h"
@@ -113,6 +115,8 @@ int main(int argc, char *argv[]){
   wlr_subcompositor_create(server.wl_display);
   //data device manager handles the clipboard
   wlr_data_device_manager_create(server.wl_display);
+  wlr_data_control_manager_v1_create(server.wl_display);
+  wlr_primary_selection_v1_device_manager_create(server.wl_display);
 
   //creates an output layout, saves the positions of outputs
   server.output_layout=wlr_output_layout_create(server.wl_display);
@@ -178,6 +182,8 @@ int main(int argc, char *argv[]){
   wl_signal_add(&server.seat->pointer_state.events.focus_change,&server.pointer_focus_change);
   server.request_set_selection.notify=seat_request_set_selection;
   wl_signal_add(&server.seat->events.request_set_selection,&server.request_set_selection);
+  server.request_set_primary_selection.notify=seat_request_set_primary_selection;
+  wl_signal_add(&server.seat->events.request_set_primary_selection,&server.request_set_primary_selection);
 
 
   //Add a Unix socket to the Wayland display

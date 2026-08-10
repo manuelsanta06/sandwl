@@ -35,6 +35,7 @@ void keyboard_handle_key(struct wl_listener *listener,void *data){
 
   bool handled=false;
   uint32_t modifiers=wlr_keyboard_get_modifiers(keyboard->wlr_keyboard);
+  //tty keybindings check
   if(!handled&&server->session){
     for(int i=0;i<nsyms;i++){
       if(syms[i]>=XKB_KEY_XF86Switch_VT_1&&syms[i]<=XKB_KEY_XF86Switch_VT_12){
