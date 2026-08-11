@@ -16,12 +16,12 @@
 #include <wlr/types/wlr_subcompositor.h>
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_xdg_shell.h>
-#include <wlr/util/log.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/types/wlr_xdg_output_v1.h>
 #include <wlr/types/wlr_viewporter.h>
 #include <wlr/types/wlr_primary_selection_v1.h>
 #include <wlr/types/wlr_data_control_v1.h>
+#include <wlr/util/log.h>
 
 #include "types.h"
 #include "seats.h"
@@ -184,6 +184,11 @@ int main(int argc, char *argv[]){
   wl_signal_add(&server.seat->events.request_set_selection,&server.request_set_selection);
   server.request_set_primary_selection.notify=seat_request_set_primary_selection;
   wl_signal_add(&server.seat->events.request_set_primary_selection,&server.request_set_primary_selection);
+
+  server.request_start_drag.notify=seat_request_start_drag;
+  wl_signal_add(&server.seat->events.request_start_drag,&server.request_start_drag);
+  server.start_drag.notify=seat_start_drag;
+  wl_signal_add(&server.seat->events.start_drag,&server.start_drag);
 
 
   //Add a Unix socket to the Wayland display

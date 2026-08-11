@@ -10,13 +10,16 @@
 #include "serverCursor.h"
 
 
-#include <wlr/util/log.h>
 void server_cursor_motion(struct wl_listener *listener,void *data){
   //forwarded by the cursor when a pointer emits _relative_ pointer motion event(ej a delta)
   struct sandwl_server *server=wl_container_of(listener,server,cursor_motion);
   struct wlr_pointer_motion_event *event=data;
   wlr_cursor_move(server->cursor,&event->pointer->base,event->delta_x,event->delta_y);
   process_cursor_motion(server,event->time_msec);
+  // Si hay un arrastre activo con ícono, actualizamos su posición en la pantalla
+  if(server->drag_icon!=NULL){
+    wlr_scene_node_set_position(&server->drag_icon->node,server->cursor->x,server->cursor->y);
+  }
 }
 
 void server_cursor_motion_absolute(struct wl_listener *listener,void *data){
