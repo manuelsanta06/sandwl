@@ -1,3 +1,4 @@
+#include <wlr/types/wlr_pointer_constraints_v1.h>
 #include <wlr/types/wlr_primary_selection.h>
 #include <wlr/types/wlr_data_device.h>
 #include <wlr/types/wlr_cursor.h>
@@ -19,12 +20,25 @@ void seat_request_cursor(struct wl_listener *listener,void *data){
 }
 
 void seat_pointer_focus_change(struct wl_listener *listener,void *data){
-  struct sandwl_server *server=wl_container_of(listener,server,pointer_focus_change);
   //raised when the pointer focus is changed,including when the client is closed
-  //set the cursor image to its default if target surface is NULL
+  struct sandwl_server *server=wl_container_of(listener,server,pointer_focus_change);
   struct wlr_seat_pointer_focus_change_event *event=data;
+
+  if(server->active_constraint&&server->active_constraint->surface!=event->new_surface){
+    wlr_pointer_constraint_v1_send_deactivated(server->active_constraint);
+    server->active_constraint=NULL;
+  }
+
   if(event->new_surface==NULL){
+    //set the cursor image to its default if target surface is NULL
     wlr_cursor_set_xcursor(server->cursor,server->cursor_mgr,"default");
+  }else{
+    struct wlr_pointer_constraint_v1 *constraint=wlr_pointer_constraints_v1_constraint_for_surface(
+      server->pointer_constraints,event->new_surface,server->seat);
+    if(constraint){
+      server->active_constraint=constraint;
+      wlr_pointer_constraint_v1_send_activated(constraint);
+    }
   }
 }
 

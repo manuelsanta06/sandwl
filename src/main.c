@@ -3,24 +3,31 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <stdlib.h>
+
 #include <wlr/backend.h>
-#include <wlr/render/allocator.h>
+
 #include <wlr/render/wlr_renderer.h>
-#include <wlr/types/wlr_cursor.h>
-#include <wlr/types/wlr_compositor.h>
-#include <wlr/types/wlr_data_device.h>
-#include <wlr/types/wlr_input_device.h>
+#include <wlr/render/allocator.h>
+
+#include <wlr/types/wlr_pointer_constraints_v1.h>
+#include <wlr/types/wlr_primary_selection_v1.h>
+#include <wlr/types/wlr_pointer_gestures_v1.h>
+#include <wlr/types/wlr_relative_pointer_v1.h>
+#include <wlr/types/wlr_data_control_v1.h>
+#include <wlr/types/wlr_xcursor_manager.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/types/wlr_output_layout.h>
+#include <wlr/types/wlr_xdg_output_v1.h>
+#include <wlr/types/wlr_subcompositor.h>
+#include <wlr/types/wlr_input_device.h>
+#include <wlr/types/wlr_data_device.h>
+#include <wlr/types/wlr_compositor.h>
+#include <wlr/types/wlr_viewporter.h>
+#include <wlr/types/wlr_xdg_shell.h>
+#include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_seat.h>
-#include <wlr/types/wlr_subcompositor.h>
-#include <wlr/types/wlr_xcursor_manager.h>
-#include <wlr/types/wlr_xdg_shell.h>
-#include <wlr/types/wlr_layer_shell_v1.h>
-#include <wlr/types/wlr_xdg_output_v1.h>
-#include <wlr/types/wlr_viewporter.h>
-#include <wlr/types/wlr_primary_selection_v1.h>
-#include <wlr/types/wlr_data_control_v1.h>
+
 #include <wlr/util/log.h>
 
 #include "types.h"
@@ -169,6 +176,15 @@ int main(int argc, char *argv[]){
   wl_signal_add(&server.cursor->events.axis,&server.cursor_axis);
   server.cursor_frame.notify=server_cursor_frame;
   wl_signal_add(&server.cursor->events.frame,&server.cursor_frame);
+
+  server.pointer_gestures=wlr_pointer_gestures_v1_create(server.wl_display);
+
+  server.relative_pointer_manager=wlr_relative_pointer_manager_v1_create(server.wl_display);
+
+  server.pointer_constraints=wlr_pointer_constraints_v1_create(server.wl_display);
+  server.new_pointer_constraint.notify=handle_new_pointer_constraint;
+  wl_signal_add(&server.pointer_constraints->events.new_constraint,&server.new_pointer_constraint);
+
 
   //configures a "seat"(up to one keyboard, pointer, touch, and drawing tablet device)
   //and a listener for new devices

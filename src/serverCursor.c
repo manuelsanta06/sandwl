@@ -1,3 +1,7 @@
+#include <stdlib.h>
+
+#include <wlr/types/wlr_pointer_constraints_v1.h>
+#include <wlr/types/wlr_relative_pointer_v1.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
 #include <wlr/types/wlr_pointer.h>
 #include <wlr/types/wlr_cursor.h>
@@ -14,9 +18,18 @@ void server_cursor_motion(struct wl_listener *listener,void *data){
   //forwarded by the cursor when a pointer emits _relative_ pointer motion event(ej a delta)
   struct sandwl_server *server=wl_container_of(listener,server,cursor_motion);
   struct wlr_pointer_motion_event *event=data;
-  wlr_cursor_move(server->cursor,&event->pointer->base,event->delta_x,event->delta_y);
+  wlr_relative_pointer_manager_v1_send_relative_motion(server->relative_pointer_manager,server->seat,
+    (uint64_t)event->time_msec*1000,
+    event->delta_x,event->delta_y,
+    event->unaccel_dx,event->unaccel_dy
+  );
+  if(server->active_constraint&&server->active_constraint->type==WLR_POINTER_CONSTRAINT_V1_LOCKED){
+    //cursor constraint
+  }else{
+    wlr_cursor_move(server->cursor,&event->pointer->base,event->delta_x,event->delta_y);
+  }
   process_cursor_motion(server,event->time_msec);
-  // Si hay un arrastre activo con ícono, actualizamos su posición en la pantalla
+  //update drag-and-drop icon position
   if(server->drag_icon!=NULL){
     wlr_scene_node_set_position(&server->drag_icon->node,server->cursor->x,server->cursor->y);
   }
@@ -31,7 +44,11 @@ void server_cursor_motion_absolute(struct wl_listener *listener,void *data){
   //emits these events
   struct sandwl_server *server=wl_container_of(listener,server,cursor_motion_absolute);
   struct wlr_pointer_motion_absolute_event *event=data;
-  wlr_cursor_warp_absolute(server->cursor,&event->pointer->base,event->x,event->y);
+  if(server->active_constraint&&server->active_constraint->type==WLR_POINTER_CONSTRAINT_V1_LOCKED){
+    //cursor constraint
+  }else{
+    wlr_cursor_warp_absolute(server->cursor,&event->pointer->base,event->x,event->y);
+  }
   process_cursor_motion(server,event->time_msec);
 }
 
@@ -97,4 +114,34 @@ void server_cursor_frame(struct wl_listener *listener,void *data){
 void server_new_pointer(struct sandwl_server *server,struct wlr_input_device *device){
   //pointer configuration should be applied here
   wlr_cursor_attach_input_device(server->cursor,device);
+}
+
+void handle_pointer_constraint_destroy(struct wl_listener *listener,void *data){
+  struct sandwl_pointer_constraint *sandwl_constraint=wl_container_of(listener,sandwl_constraint,destroy);
+  struct sandwl_server *server=sandwl_constraint->server;
+
+  if(server->active_constraint==sandwl_constraint->constraint){
+    wlr_pointer_constraint_v1_send_deactivated(sandwl_constraint->constraint);
+    server->active_constraint=NULL;
+  }
+
+  wl_list_remove(&sandwl_constraint->destroy.link);
+  free(sandwl_constraint);
+}
+
+void handle_new_pointer_constraint(struct wl_listener *listener,void *data){
+  struct sandwl_server *server=wl_container_of(listener,server,new_pointer_constraint);
+  struct wlr_pointer_constraint_v1 *wlr_constraint=data;
+
+  struct sandwl_pointer_constraint *sandwl_constraint=calloc(1,sizeof(*sandwl_constraint));
+  sandwl_constraint->server=server;
+  sandwl_constraint->constraint=wlr_constraint;
+
+  sandwl_constraint->destroy.notify=handle_pointer_constraint_destroy;
+  wl_signal_add(&wlr_constraint->events.destroy,&sandwl_constraint->destroy);
+
+  if(server->seat->pointer_state.focused_surface==wlr_constraint->surface){
+    server->active_constraint=wlr_constraint;
+    wlr_pointer_constraint_v1_send_activated(wlr_constraint);
+  }
 }

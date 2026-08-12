@@ -16,3 +16,8 @@ void server_cursor_axis(struct wl_listener *listener,void *data);
 void server_cursor_frame(struct wl_listener *listener,void *data);
 
 void server_new_pointer(struct sandwl_server *server,struct wlr_input_device *device);
+
+
+void handle_pointer_constraint_destroy(struct wl_listener *listener,void *data);
+
+void handle_new_pointer_constraint(struct wl_listener *listener,void *data);

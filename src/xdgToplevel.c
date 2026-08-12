@@ -51,13 +51,13 @@ void begin_interactive(struct sandwl_toplevel *toplevel,enum sandwl_cursor_mode 
   if(mode==SANDWL_CURSOR_MOVE){
     server->grab_x=server->cursor->x-toplevel->scene_tree->node.x;
     server->grab_y=server->cursor->y-toplevel->scene_tree->node.y;
-  }else{
+  }else if(mode==SANDWL_CURSOR_RESIZE){
     struct wlr_box *geo_box=&toplevel->xdg_toplevel->base->geometry;
 
-    double border_x=(toplevel->scene_tree->node.x+geo_box->x)+((edges&WLR_EDGE_RIGHT)?geo_box->width:0);
-    double border_y=(toplevel->scene_tree->node.y+geo_box->y)+((edges&WLR_EDGE_BOTTOM)?geo_box->height:0);
-    server->grab_x=server->cursor->x-border_x;
-    server->grab_y=server->cursor->y-border_y;
+    double borderx=(toplevel->scene_tree->node.x+geo_box->x)+((edges&WLR_EDGE_RIGHT)?geo_box->width:0);
+    double bordery=(toplevel->scene_tree->node.y+geo_box->y)+((edges&WLR_EDGE_BOTTOM)?geo_box->height:0);
+    server->grab_x=server->cursor->x-borderx;
+    server->grab_y=server->cursor->y-bordery;
 
     server->grab_geobox=*geo_box;
     server->grab_geobox.x+=toplevel->scene_tree->node.x;
@@ -65,6 +65,7 @@ void begin_interactive(struct sandwl_toplevel *toplevel,enum sandwl_cursor_mode 
 
     server->resize_edges=edges;
   }
+  wlr_seat_pointer_clear_focus(server->seat);
 }
 
 void xdg_toplevel_request_move(struct wl_listener *listener,void *data){
