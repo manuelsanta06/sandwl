@@ -1,6 +1,6 @@
 #pragma once
 
-#include <wlr/types/wlr_scene.h>
+#include <wayland-server-core.h>
 
 
 void popup_destroy(struct wl_listener *listener, void *data);

@@ -1,15 +1,18 @@
-#include <stdbool.h>
-#include <stdlib.h>
+#include <wlr/types/wlr_xdg_decoration_v1.h>
+#include <wlr/types/wlr_layer_shell_v1.h>
+#include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_scene.h>
-#include <wlr/types/wlr_xdg_shell.h>
-#include <wlr/types/wlr_layer_shell_v1.h>
+
 #include <wlr/util/edges.h>
 
-#include "types.h"
-#include "utilies.h"
-#include "layerShell.h"
+#include <stdbool.h>
+#include <stdlib.h>
+
 #include "xdgToplevel.h"
+#include "layerShell.h"
+#include "utilies.h"
+#include "types.h"
 
 void xdg_toplevel_map(struct wl_listener *listener,void *data){
   //called when surface is ready to display
@@ -36,6 +39,7 @@ void xdg_toplevel_commit(struct wl_listener *listener,void *data){
     //the compositor must reply with a configure so the client can map the surface
     //configures the xdg_toplevel with 0,0 size to let the client pick the dimensions
     wlr_xdg_toplevel_set_size(toplevel->xdg_toplevel,0,0);
+    wlr_xdg_surface_schedule_configure(toplevel->xdg_toplevel->base);
   }
 }
 

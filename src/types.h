@@ -32,6 +32,9 @@ struct sandwl_server{
   struct wl_listener                      new_xdg_popup;
   struct wl_list                          toplevels;
 
+  struct wl_listener                      new_xdg_decoration;
+  struct wlr_xdg_decoration_manager_v1*   xdg_decoration_manager;
+
   struct wlr_cursor                       *cursor;
   struct wlr_xcursor_manager              *cursor_mgr;
   struct wl_listener                      cursor_motion;
@@ -74,6 +77,12 @@ struct sandwl_server{
   struct wlr_pointer_constraint_v1        *active_constraint;
 
   struct wlr_pointer_gestures_v1          *pointer_gestures;
+};
+
+struct sandwl_decoration{
+  struct wlr_xdg_toplevel_decoration_v1 *wlr_decoration;
+  struct wl_listener                    request_mode;
+  struct wl_listener                    destroy;
 };
 
 struct sandwl_pointer_constraint{

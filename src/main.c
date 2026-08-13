@@ -13,6 +13,7 @@
 #include <wlr/types/wlr_primary_selection_v1.h>
 #include <wlr/types/wlr_pointer_gestures_v1.h>
 #include <wlr/types/wlr_relative_pointer_v1.h>
+#include <wlr/types/wlr_xdg_decoration_v1.h>
 #include <wlr/types/wlr_data_control_v1.h>
 #include <wlr/types/wlr_xcursor_manager.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
@@ -30,13 +31,14 @@
 
 #include <wlr/util/log.h>
 
+#include "serverKeyboard.h"
+#include "serverCursor.h"
+#include "xdgToplevel.h"
+#include "decoration.h"
+#include "layerShell.h"
+#include "outputs.h"
 #include "types.h"
 #include "seats.h"
-#include "outputs.h"
-#include "xdgToplevel.h"
-#include "serverCursor.h"
-#include "serverKeyboard.h"
-#include "layerShell.h"
 
 
 void server_new_input(struct wl_listener *listener,void *data){
@@ -159,6 +161,10 @@ int main(int argc, char *argv[]){
   server.layer_shell=wlr_layer_shell_v1_create(server.wl_display,4);
   server.new_layer_surface.notify=server_new_layer_surface;
   wl_signal_add(&server.layer_shell->events.new_surface,&server.new_layer_surface);
+
+  server.xdg_decoration_manager=wlr_xdg_decoration_manager_v1_create(server.wl_display);
+  server.new_xdg_decoration.notify=server_new_xdg_decoration;
+  wl_signal_add(&server.xdg_decoration_manager->events.new_toplevel_decoration,&server.new_xdg_decoration);
 
   server.cursor=wlr_cursor_create();
   wlr_cursor_attach_output_layout(server.cursor,server.output_layout);
