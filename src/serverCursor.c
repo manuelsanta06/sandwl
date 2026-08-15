@@ -3,15 +3,17 @@
 #include <wlr/types/wlr_pointer_constraints_v1.h>
 #include <wlr/types/wlr_relative_pointer_v1.h>
 #include <wlr/types/wlr_layer_shell_v1.h>
+#include <wlr/types/wlr_xdg_shell.h>
 #include <wlr/types/wlr_pointer.h>
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_seat.h>
 
-#include "types.h"
-#include "utilies.h"
 #include "processCursor.h"
 #include "serverCursor.h"
+#include "xdgToplevel.h"
+#include "utilies.h"
+#include "types.h"
 
 
 void server_cursor_motion(struct wl_listener *listener,void *data){
@@ -67,7 +69,20 @@ void server_cursor_button(struct wl_listener *listener,void *data){
     struct wlr_scene_node *node=wlr_scene_node_at(&server->scene->tree.node,
       server->cursor->x,server->cursor->y,&sx,&sy);
 
-    if(node&&node->type==WLR_SCENE_NODE_BUFFER){
+    if(node&&node->type==WLR_SCENE_NODE_RECT){
+      //Handle clicks on server-side decorations
+      struct sandwl_toplevel *toplevel=node->data;
+      if(toplevel&&toplevel->decoration){
+        focus_toplevel(toplevel);
+        if(node==&toplevel->decoration->close_button->node){
+          wlr_xdg_toplevel_send_close(toplevel->xdg_toplevel);
+          return;
+        }else if(node==&toplevel->decoration->titlebar->node){
+          begin_interactive(toplevel,SANDWL_CURSOR_MOVE,0);
+          return;
+        }
+      }
+    }else if(node&&node->type==WLR_SCENE_NODE_BUFFER){
       struct wlr_surface *root_surface=wlr_surface_get_root_surface(
         wlr_scene_surface_try_from_buffer(wlr_scene_buffer_from_node(node))->surface);
       struct wlr_layer_surface_v1 *layer=wlr_layer_surface_v1_try_from_wlr_surface(root_surface);

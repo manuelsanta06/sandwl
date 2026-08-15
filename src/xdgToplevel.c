@@ -18,6 +18,7 @@ void xdg_toplevel_map(struct wl_listener *listener,void *data){
   //called when surface is ready to display
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,map);
   wl_list_insert(&toplevel->server->toplevels, &toplevel->link);
+  wlr_scene_node_set_position(&toplevel->scene_tree->node,50,50);
   focus_toplevel(toplevel);
 }
 
@@ -36,10 +37,22 @@ void xdg_toplevel_commit(struct wl_listener *listener,void *data){
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,commit);
 
   if(toplevel->xdg_toplevel->base->initial_commit){
+    if(toplevel->decoration){
+      wlr_xdg_toplevel_decoration_v1_set_mode(toplevel->decoration->wlr_decoration,
+        WLR_XDG_TOPLEVEL_DECORATION_V1_MODE_SERVER_SIDE);
+    }
     //the compositor must reply with a configure so the client can map the surface
     //configures the xdg_toplevel with 0,0 size to let the client pick the dimensions
     wlr_xdg_toplevel_set_size(toplevel->xdg_toplevel,0,0);
     wlr_xdg_surface_schedule_configure(toplevel->xdg_toplevel->base);
+  }
+
+  if(toplevel->decoration){
+    int width=toplevel->xdg_toplevel->base->geometry.width;
+    if(width>0){
+      wlr_scene_rect_set_size(toplevel->decoration->titlebar,width,24);
+      wlr_scene_node_set_position(&toplevel->decoration->close_button->node,width-20,-20);
+    }
   }
 }
 

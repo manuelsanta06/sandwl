@@ -79,12 +79,6 @@ struct sandwl_server{
   struct wlr_pointer_gestures_v1          *pointer_gestures;
 };
 
-struct sandwl_decoration{
-  struct wlr_xdg_toplevel_decoration_v1 *wlr_decoration;
-  struct wl_listener                    request_mode;
-  struct wl_listener                    destroy;
-};
-
 struct sandwl_pointer_constraint{
   struct sandwl_server              *server;
   struct wlr_pointer_constraint_v1  *constraint;
@@ -115,19 +109,33 @@ struct sandwl_layer_surface{
   struct wl_listener                new_popup;
 };
 
+struct sandwl_decoration{
+  struct wlr_xdg_toplevel_decoration_v1 *wlr_decoration;
+  struct sandwl_toplevel                *toplevel;
+  struct wlr_scene_tree                 *scene_tree;
+  struct wlr_scene_rect                 *titlebar;
+  struct wlr_scene_rect                 *close_button;
+  struct wl_listener                    request_mode;
+  struct wl_listener                    destroy;
+};
+
+
 struct sandwl_toplevel{
-  struct wl_list          link;
-  struct sandwl_server    *server;
-  struct wlr_xdg_toplevel *xdg_toplevel;
-  struct wlr_scene_tree   *scene_tree;
-  struct wl_listener      map;
-  struct wl_listener      unmap;
-  struct wl_listener      commit;
-  struct wl_listener      destroy;
-  struct wl_listener      request_move;
-  struct wl_listener      request_resize;
-  struct wl_listener      request_maximize;
-  struct wl_listener      request_fullscreen;
+  struct wl_list            link;
+  struct sandwl_server      *server;
+  struct wlr_xdg_toplevel   *xdg_toplevel;
+
+  struct wlr_scene_tree     *scene_tree;
+  struct sandwl_decoration  *decoration;
+
+  struct wl_listener        map;
+  struct wl_listener        unmap;
+  struct wl_listener        commit;
+  struct wl_listener        destroy;
+  struct wl_listener        request_move;
+  struct wl_listener        request_resize;
+  struct wl_listener        request_maximize;
+  struct wl_listener        request_fullscreen;
 };
 
 struct sandwl_popup{
