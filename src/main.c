@@ -36,6 +36,7 @@
 #include "xdgToplevel.h"
 #include "decoration.h"
 #include "layerShell.h"
+#include "xwayland.h"
 #include "outputs.h"
 #include "types.h"
 #include "seats.h"
@@ -119,9 +120,21 @@ int main(int argc, char *argv[]){
   }
 
   //compositor is necessary for clients to allocate surfaces
-  wlr_compositor_create(server.wl_display,5,server.renderer);
+  server.compositor=wlr_compositor_create(server.wl_display,5,server.renderer);
   //subcompositor allows to assign the role of subsurfaces to surfaces
   wlr_subcompositor_create(server.wl_display);
+
+  //Initialize XWayland
+  //The boolean true enables lazy loading (starts XWayland only when an X11 client connects)
+  server.xwayland=wlr_xwayland_create(server.wl_display,server.compositor,true);
+  if(server.xwayland){
+    setenv("DISPLAY",server.xwayland->display_name,true);
+  }
+  server.xwayland_ready.notify=server_xwayland_ready;
+  wl_signal_add(&server.xwayland->events.ready,&server.xwayland_ready);
+  server.new_xwayland_surface.notify=server_new_xwayland_surface;
+  wl_signal_add(&server.xwayland->events.new_surface,&server.new_xwayland_surface);
+
   //data device manager handles the clipboard
   wlr_data_device_manager_create(server.wl_display);
   wlr_data_control_manager_v1_create(server.wl_display);

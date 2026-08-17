@@ -51,12 +51,12 @@ void server_new_xdg_decoration(struct wl_listener *listener,void *data){
   // Create a scene tree for the titlebar and buttons above the window surface
   deco->scene_tree=wlr_scene_tree_create(scene_tree);
   
-  // Titlebar background (dark grey)
-  deco->titlebar=wlr_scene_rect_create(deco->scene_tree,width,24,(float[]){0.25f,0.25f,0.25f,1.0f});
+  // Titlebar background(dark grey)
+  deco->titlebar=wlr_scene_rect_create(deco->scene_tree,width,24,(float[]){0.25f,0.25f,0.25f,0.2f});
   wlr_scene_node_set_position(&deco->titlebar->node,0,-24);
   deco->titlebar->node.data=toplevel;
 
-  // Close button (red)
+  // Close button(red)
   deco->close_button=wlr_scene_rect_create(deco->scene_tree,16,16,(float[]){0.8f,0.2f,0.2f,1.0f});
   wlr_scene_node_set_position(&deco->close_button->node,width-20,-20);
   deco->close_button->node.data=toplevel;

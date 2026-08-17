@@ -1,8 +1,8 @@
 #pragma once
 
-#include <stdint.h>
 #include <wayland-server-core.h>
 #include <wlr/util/box.h>
+#include <wlr/xwayland.h>
 
 
 enum sandwl_cursor_mode{
@@ -77,6 +77,11 @@ struct sandwl_server{
   struct wlr_pointer_constraint_v1        *active_constraint;
 
   struct wlr_pointer_gestures_v1          *pointer_gestures;
+
+  struct wlr_compositor                   *compositor;
+  struct wlr_xwayland                     *xwayland;
+  struct wl_listener                      xwayland_ready;
+  struct wl_listener                      new_xwayland_surface;
 };
 
 struct sandwl_pointer_constraint{
@@ -119,6 +124,24 @@ struct sandwl_decoration{
   struct wl_listener                    destroy;
 };
 
+struct sandwl_xwayland_surface{
+  struct wl_list link;
+  struct sandwl_server *server;
+  struct wlr_xwayland_surface *xwayland_surface;
+  
+  struct wlr_scene_tree *scene_tree;
+  
+  struct wl_listener associate;
+  struct wl_listener dissociate;
+  struct wl_listener map;
+  struct wl_listener unmap;
+  struct wl_listener destroy;
+  struct wl_listener request_configure;
+  struct wl_listener request_move;
+  struct wl_listener request_resize;
+  struct wl_listener request_maximize;
+  struct wl_listener request_fullscreen;
+};
 
 struct sandwl_toplevel{
   struct wl_list            link;
