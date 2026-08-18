@@ -11,7 +11,6 @@
 
 #include "processCursor.h"
 #include "serverCursor.h"
-#include "xdgToplevel.h"
 #include "utilies.h"
 #include "types.h"
 
@@ -73,12 +72,12 @@ void server_cursor_button(struct wl_listener *listener,void *data){
       //Handle clicks on server-side decorations
       struct sandwl_toplevel *toplevel=node->data;
       if(toplevel&&toplevel->decoration){
-        focus_toplevel(toplevel);
+        focus_surface(server,toplevel->scene_tree,toplevel->xdg_toplevel->base->surface);
         if(node==&toplevel->decoration->close_button->node){
           wlr_xdg_toplevel_send_close(toplevel->xdg_toplevel);
           return;
         }else if(node==&toplevel->decoration->titlebar->node){
-          begin_interactive(toplevel,SANDWL_CURSOR_MOVE,0);
+          begin_interactive(toplevel->server,toplevel->scene_tree,SANDWL_CURSOR_MOVE,0,(struct wlr_box){0});
           return;
         }
       }
@@ -94,9 +93,9 @@ void server_cursor_button(struct wl_listener *listener,void *data){
         }
       }else{
         struct wlr_surface *surface=NULL;
-        struct sandwl_toplevel *toplevel=desktop_toplevel_at(server,
+        struct wlr_scene_tree *node=desktop_tree_at(server,
           server->cursor->x,server->cursor->y,&surface,&sx,&sy);
-        if(toplevel)focus_toplevel(toplevel);
+        if(node)focus_surface(server,node,surface);
         else{
         }
       }

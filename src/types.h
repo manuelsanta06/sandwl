@@ -56,7 +56,7 @@ struct sandwl_server{
   struct wl_listener                      start_drag;
   struct wl_list                          keyboards;
   enum sandwl_cursor_mode                 cursor_mode;
-  struct sandwl_toplevel                  *grabbed_toplevel;
+  struct wlr_scene_tree                   *grabbed_tree;
   double grab_x, grab_y;
   struct wlr_box                          grab_geobox;
   uint32_t                                resize_edges;

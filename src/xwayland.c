@@ -1,17 +1,21 @@
 #include <stdlib.h>
 
 #include <wlr/types/wlr_compositor.h>
+#include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_scene.h>
+#include <wlr/types/wlr_seat.h>
 #include <wlr/xwayland.h>
 
 #include <wlr/util/log.h>
 
+#include "processCursor.h"
 #include "xwayland.h"
+#include "utilies.h"
 #include "types.h"
 
 void server_xwayland_ready(struct wl_listener *listener,void *data){
   //Raised when XWayland is ready to accept connections
-  wlr_log(WLR_ERROR,"Xwayland server running");
+  wlr_log(WLR_INFO,"Xwayland server running");
 }
 
 void xwayland_surface_map(struct wl_listener *listener,void *data){
@@ -31,6 +35,8 @@ void xwayland_surface_unmap(struct wl_listener *listener,void *data){
   //Called when the X11 surface is hidden or closed
   struct sandwl_xwayland_surface *surface=wl_container_of(listener,surface,unmap);
   wl_list_remove(&surface->link);
+  if(surface->scene_tree==surface->server->grabbed_tree)
+    reset_cursor_mode(surface->server);
   
   if(surface->scene_tree){
     wlr_scene_node_destroy(&surface->scene_tree->node);
@@ -72,14 +78,22 @@ void xwayland_surface_request_configure(struct wl_listener *listener,void *data)
 
 void xwayland_surface_request_move(struct wl_listener *listener,void *data){
   struct sandwl_xwayland_surface *surface=wl_container_of(listener,surface,request_move);
-  //TODO: implement begin_interactive for XWayland similar to your xdg_toplevel logic
+  struct wlr_box empty_box={0};
+  begin_interactive(surface->server, surface->scene_tree, SANDWL_CURSOR_MOVE, 0, empty_box);
 }
 
 void xwayland_surface_request_resize(struct wl_listener *listener,void *data){
   struct sandwl_xwayland_surface *surface=wl_container_of(listener,surface,request_resize);
   struct wlr_xwayland_resize_event *event=data;
-  //TODO: implement begin_interactive for XWayland resizing
+  struct wlr_box geo_box={
+    .x = surface->xwayland_surface->x,
+    .y = surface->xwayland_surface->y,
+    .width = surface->xwayland_surface->width,
+    .height = surface->xwayland_surface->height
+  };
+  begin_interactive(surface->server, surface->scene_tree, SANDWL_CURSOR_RESIZE, event->edges, geo_box);
 }
+  //TODO: implement begin_interactive for XWayland resizing
 
 void server_new_xwayland_surface(struct wl_listener *listener,void *data){
   struct sandwl_server *server=wl_container_of(listener,server,new_xwayland_surface);

@@ -9,6 +9,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
+#include "processCursor.h"
 #include "xdgToplevel.h"
 #include "layerShell.h"
 #include "utilies.h"
@@ -19,14 +20,14 @@ void xdg_toplevel_map(struct wl_listener *listener,void *data){
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,map);
   wl_list_insert(&toplevel->server->toplevels, &toplevel->link);
   wlr_scene_node_set_position(&toplevel->scene_tree->node,50,50);
-  focus_toplevel(toplevel);
+  focus_surface(toplevel->server,toplevel->scene_tree,toplevel->xdg_toplevel->base->surface);
 }
 
 void xdg_toplevel_unmap(struct wl_listener *listener,void *data){
   //Called when the surface is unmapped//hidden
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,unmap);
   //Reset the cursor mode if the grabbed toplevel got unmapped
-  if(toplevel==toplevel->server->grabbed_toplevel)
+  if(toplevel->scene_tree==toplevel->server->grabbed_tree)
     reset_cursor_mode(toplevel->server);
 
   wl_list_remove(&toplevel->link);
@@ -57,39 +58,11 @@ void xdg_toplevel_commit(struct wl_listener *listener,void *data){
 }
 
 
-//sets upp an interactive move/resize operation
-//the compositor stops propagating pointer vents to clients and consumes them itself
-void begin_interactive(struct sandwl_toplevel *toplevel,enum sandwl_cursor_mode mode,uint32_t edges){
-  struct sandwl_server *server=toplevel->server;
-
-  server->grabbed_toplevel=toplevel;
-  server->cursor_mode=mode;
-
-  if(mode==SANDWL_CURSOR_MOVE){
-    server->grab_x=server->cursor->x-toplevel->scene_tree->node.x;
-    server->grab_y=server->cursor->y-toplevel->scene_tree->node.y;
-  }else if(mode==SANDWL_CURSOR_RESIZE){
-    struct wlr_box *geo_box=&toplevel->xdg_toplevel->base->geometry;
-
-    double borderx=(toplevel->scene_tree->node.x+geo_box->x)+((edges&WLR_EDGE_RIGHT)?geo_box->width:0);
-    double bordery=(toplevel->scene_tree->node.y+geo_box->y)+((edges&WLR_EDGE_BOTTOM)?geo_box->height:0);
-    server->grab_x=server->cursor->x-borderx;
-    server->grab_y=server->cursor->y-bordery;
-
-    server->grab_geobox=*geo_box;
-    server->grab_geobox.x+=toplevel->scene_tree->node.x;
-    server->grab_geobox.y+=toplevel->scene_tree->node.y;
-
-    server->resize_edges=edges;
-  }
-  wlr_seat_pointer_clear_focus(server->seat);
-}
-
 void xdg_toplevel_request_move(struct wl_listener *listener,void *data){
   //raised when a client would like to begin an interactive move
   //TODO: prevent the client from requesting this whenever they want
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_move);
-  begin_interactive(toplevel,SANDWL_CURSOR_MOVE,0);
+  begin_interactive(toplevel->server,toplevel->scene_tree,SANDWL_CURSOR_MOVE,0,(struct wlr_box){0});
 }
 
 void xdg_toplevel_request_resize(struct wl_listener *listener,void *data){
@@ -97,7 +70,8 @@ void xdg_toplevel_request_resize(struct wl_listener *listener,void *data){
   //TODO: prevent the client from requesting this whenever they want
   struct wlr_xdg_toplevel_resize_event *event=data;
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_resize);
-  begin_interactive(toplevel,SANDWL_CURSOR_RESIZE,event->edges);
+  begin_interactive(toplevel->server,toplevel->scene_tree,SANDWL_CURSOR_RESIZE,event->edges,
+      toplevel->xdg_toplevel->base->geometry);
 }
 
 //TODO:

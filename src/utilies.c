@@ -7,49 +7,68 @@
 #include "utilies.h"
 
 
-void focus_toplevel(struct sandwl_toplevel *toplevel){
-  /* Note: this function only deals with keyboard focus. */
-  if(toplevel==NULL){
-    return;
-  }
-  struct sandwl_server *server=toplevel->server;
+void focus_surface(struct sandwl_server *server,struct wlr_scene_tree *tree,struct wlr_surface *surface){
+  if(!surface)return;
   struct wlr_seat *seat=server->seat;
   struct wlr_surface *prev_surface=seat->keyboard_state.focused_surface;
-  struct wlr_surface *surface=toplevel->xdg_toplevel->base->surface;
   if(prev_surface==surface)return;
 
+  //Deactivate previous surface
   if(prev_surface){
-    //Deactivate the previously focused surface
-    struct wlr_xdg_toplevel *prev_toplevel=
-      wlr_xdg_toplevel_try_from_wlr_surface(prev_surface);
-    if(prev_toplevel!=NULL){
-      wlr_xdg_toplevel_set_activated(prev_toplevel,false);
+    struct wlr_surface *prev_root=wlr_surface_get_root_surface(prev_surface);
+    struct wlr_xdg_surface *prev_xdg=wlr_xdg_surface_try_from_wlr_surface(prev_root);
+    if(prev_xdg&&prev_xdg->role==WLR_XDG_SURFACE_ROLE_TOPLEVEL){
+      wlr_xdg_toplevel_set_activated(prev_xdg->toplevel,false);
+    }
+    struct wlr_xwayland_surface *prev_xway=wlr_xwayland_surface_try_from_wlr_surface(prev_root);
+    if(prev_xway){
+      wlr_xwayland_surface_activate(prev_xway,false);
     }
   }
+
   struct wlr_keyboard *keyboard=wlr_seat_get_keyboard(seat);
-  //Move the toplevel to the front
-  wlr_scene_node_raise_to_top(&toplevel->scene_tree->node);
-  wl_list_remove(&toplevel->link);
-  wl_list_insert(&server->toplevels,&toplevel->link);
-  //Activate the new surface
-  wlr_xdg_toplevel_set_activated(toplevel->xdg_toplevel,true);
-  //Tell the seat to have the keyboard enter this surface
-  if(keyboard!=NULL){
-    wlr_seat_keyboard_notify_enter(seat,surface,
-      keyboard->keycodes,keyboard->num_keycodes,&keyboard->modifiers);
+
+  if(tree)
+    wlr_scene_node_raise_to_top(&tree->node);
+
+  //Activate new surface
+  struct wlr_surface *root_surface=wlr_surface_get_root_surface(surface);
+  struct wlr_xdg_surface *xdg=wlr_xdg_surface_try_from_wlr_surface(root_surface);
+  if(xdg&&xdg->role==WLR_XDG_SURFACE_ROLE_TOPLEVEL){
+    wlr_xdg_toplevel_set_activated(xdg->toplevel,true);
+    //Reordenar native list
+    struct sandwl_toplevel *toplevel=tree->node.data;
+    if(toplevel){
+      wl_list_remove(&toplevel->link);
+      wl_list_insert(&server->toplevels,&toplevel->link);
+    }
   }
+  struct wlr_xwayland_surface *xway=wlr_xwayland_surface_try_from_wlr_surface(root_surface);
+  if(xway){
+    wlr_xwayland_surface_activate(xway,true);
+    //Reordenar x11 list
+    struct sandwl_xwayland_surface *xway_surf=tree->node.data;
+    if(xway_surf){
+      wl_list_remove(&xway_surf->link);
+      wl_list_insert(&server->toplevels,&xway_surf->link);
+    }
+  }
+
+  if(keyboard)
+    wlr_seat_keyboard_notify_enter(seat,surface,keyboard->keycodes,keyboard->num_keycodes,&keyboard->modifiers);
 }
 
 void reset_cursor_mode(struct sandwl_server *server){
   //Reset the cursor mode to passthrough
   server->cursor_mode=SANDWL_CURSOR_PASSTHROUGH;
-  server->grabbed_toplevel=NULL;
+  server->grabbed_tree=NULL;
 }
 
 //return the topmost node in the scene at a given layout coords
-struct sandwl_toplevel *desktop_toplevel_at(
+struct wlr_scene_tree *desktop_tree_at(
   struct sandwl_server *server,double lx,double ly,
   struct wlr_surface **surface,double*sx,double*sy){
+  
   struct wlr_scene_node *node=wlr_scene_node_at(&server->scene->tree.node,lx,ly,sx,sy);
   if(node==NULL||node->type!=WLR_SCENE_NODE_BUFFER)
     return NULL;
@@ -61,7 +80,7 @@ struct sandwl_toplevel *desktop_toplevel_at(
 
   *surface=scene_surface->surface;
 
-  //find the node corresponding to the sandwl_toplevel at the root of this surface tree
+  //find the node corresponding to the root of this surface tree
   struct wlr_scene_tree *tree=node->parent;
   while(tree!=NULL&&tree->node.data==NULL)
     tree=tree->node.parent;
@@ -70,9 +89,13 @@ struct sandwl_toplevel *desktop_toplevel_at(
 
   struct wlr_surface *root_surface=wlr_surface_get_root_surface(*surface);
   struct wlr_xdg_surface *xdg_surface=wlr_xdg_surface_try_from_wlr_surface(root_surface);
+  struct wlr_xwayland_surface *xwayland_surface=wlr_xwayland_surface_try_from_wlr_surface(root_surface);
   
-  if(!xdg_surface||xdg_surface->role!=WLR_XDG_SURFACE_ROLE_TOPLEVEL)
+  if(!xdg_surface&&!xwayland_surface)
     return NULL;
   
-  return tree->node.data;
+  if(xdg_surface && xdg_surface->role!=WLR_XDG_SURFACE_ROLE_TOPLEVEL)
+    return NULL;
+  
+  return tree;
 }

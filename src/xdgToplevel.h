@@ -12,10 +12,6 @@ void xdg_toplevel_unmap(struct wl_listener *listener,void *data);
 void xdg_toplevel_commit(struct wl_listener *listener,void *data);
 
 
-//sets upp an interactive move/resize operation
-//the compositor stops propagating pointer vents to clients and consumes them itself
-void begin_interactive(struct sandwl_toplevel *toplevel,enum sandwl_cursor_mode mode,uint32_t edges);
-
 void xdg_toplevel_request_move(struct wl_listener *listener,void *data);
 
 void xdg_toplevel_request_resize(struct wl_listener *listener,void *data);
