@@ -16,6 +16,7 @@
 #include "types.h"
 
 void xdg_toplevel_map(struct wl_listener *listener,void *data){
+  (void)data;
   //called when surface is ready to display
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,map);
   wl_list_insert(&toplevel->server->toplevels, &toplevel->link);
@@ -24,6 +25,7 @@ void xdg_toplevel_map(struct wl_listener *listener,void *data){
 }
 
 void xdg_toplevel_unmap(struct wl_listener *listener,void *data){
+  (void)data;
   //Called when the surface is unmapped//hidden
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,unmap);
   //Reset the cursor mode if the grabbed toplevel got unmapped
@@ -34,6 +36,7 @@ void xdg_toplevel_unmap(struct wl_listener *listener,void *data){
 }
 
 void xdg_toplevel_commit(struct wl_listener *listener,void *data){
+  (void)data;
   //Called when a new surface state is committed
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,commit);
 
@@ -59,6 +62,7 @@ void xdg_toplevel_commit(struct wl_listener *listener,void *data){
 
 
 void xdg_toplevel_request_move(struct wl_listener *listener,void *data){
+  (void)data;
   //raised when a client would like to begin an interactive move
   //TODO: prevent the client from requesting this whenever they want
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_move);
@@ -76,6 +80,7 @@ void xdg_toplevel_request_resize(struct wl_listener *listener,void *data){
 
 //TODO:
 void xdg_toplevel_request_maximize(struct wl_listener *listener,void *data){
+  (void)data;
   //raised when a client would like to maximize
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_maximize);
   if(toplevel->xdg_toplevel->base->initialized){
@@ -85,6 +90,7 @@ void xdg_toplevel_request_maximize(struct wl_listener *listener,void *data){
 
 //TODO:
 void xdg_toplevel_request_fullscreen(struct wl_listener *listener,void *data){
+  (void)data;
   //raised when a client would like to fullscreen
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_fullscreen);
   if(toplevel->xdg_toplevel->base->initialized){
@@ -93,6 +99,7 @@ void xdg_toplevel_request_fullscreen(struct wl_listener *listener,void *data){
 }
 
 void xdg_toplevel_destroy(struct wl_listener *listener,void *data){
+  (void)data;
   //Called when the xdg_toplevel is destroyed
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,destroy);
 

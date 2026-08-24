@@ -13,6 +13,7 @@
 
 
 void keyboard_handle_modifiers(struct wl_listener *listener,void *data){
+  (void)data;
   //raised on modifier pres
   struct sandwl_keyboard *keyboard=wl_container_of(listener,keyboard,modifiers);
   wlr_seat_set_keyboard(keyboard->server->seat,keyboard->wlr_keyboard);
@@ -69,6 +70,7 @@ void keyboard_handle_key(struct wl_listener *listener,void *data){
   }
 }
 void keyboard_handle_destroy(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_keyboard *keyboard=wl_container_of(listener,keyboard,destroy);
   wl_list_remove(&keyboard->modifiers.link);
   wl_list_remove(&keyboard->key.link);

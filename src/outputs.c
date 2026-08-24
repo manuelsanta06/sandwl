@@ -10,6 +10,7 @@
 #include "outputs.h"
 
 void output_destroy(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_output *output=wl_container_of(listener,output,destroy);
 
   wl_list_remove(&output->frame.link);
@@ -29,6 +30,7 @@ void output_request_state(struct wl_listener *listener,void *data){
 }
 
 void output_frame(struct wl_listener *listener,void *data){
+  (void)data;
   //runs each time an output wants to render a frame
   struct sandwl_output *output=wl_container_of(listener,output,frame);
   struct wlr_scene *scene=output->server->scene;

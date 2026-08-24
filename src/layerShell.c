@@ -13,6 +13,7 @@
 #include "outputs.h"
 
 void popup_destroy(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_popup *popup=wl_container_of(listener,popup,destroy);
   wl_list_remove(&popup->reposition.link);
   wl_list_remove(&popup->destroy.link);
@@ -21,6 +22,7 @@ void popup_destroy(struct wl_listener *listener,void *data){
 }
 
 void popup_commit(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_popup *popup=wl_container_of(listener,popup,commit);
   if(popup->xdg_popup->base->initial_commit){
     wlr_xdg_surface_schedule_configure(popup->xdg_popup->base);
@@ -29,6 +31,7 @@ void popup_commit(struct wl_listener *listener,void *data){
 }
 
 void popup_reposition(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_popup *popup=wl_container_of(listener,popup,reposition);
   wlr_xdg_surface_schedule_configure(popup->xdg_popup->base);
 }
@@ -54,6 +57,7 @@ void layer_surface_new_popup(struct wl_listener *listener,void *data){
 
 
 void layer_surface_map(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_layer_surface *layer_surface=wl_container_of(listener,layer_surface,map);
   struct sandwl_server *server=layer_surface->server;
   if(layer_surface->layer_surface->current.keyboard_interactive){
@@ -77,12 +81,14 @@ void layer_surface_map(struct wl_listener *listener,void *data){
 }
 
 void layer_surface_unmap(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_layer_surface *layer_surface=wl_container_of(listener,layer_surface,unmap);
   wl_list_remove(&layer_surface->link);
   wlr_scene_node_set_enabled(&layer_surface->scene_tree->node,false);
 }
 
 void layer_surface_destroy(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_layer_surface *layer_surface=wl_container_of(listener,layer_surface,destroy);
 
   wl_list_remove(&layer_surface->new_popup.link);
@@ -96,6 +102,7 @@ void layer_surface_destroy(struct wl_listener *listener,void *data){
 }
 
 void layer_surface_commit(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_layer_surface *layer_surface=wl_container_of(listener,layer_surface,surface_commit);
   struct wlr_layer_surface_v1 *wlr_layer_surface=layer_surface->layer_surface;
 

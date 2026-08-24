@@ -83,6 +83,7 @@ void seat_start_drag(struct wl_listener *listener,void *data){
 
 
 void seat_drag_icon_destroy(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_server *server=wl_container_of(listener,server,drag_icon_destroy);
   wl_list_remove(&server->drag_icon_destroy.link);
   server->drag_icon=NULL;

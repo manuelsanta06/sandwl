@@ -14,11 +14,13 @@
 #include "types.h"
 
 void server_xwayland_ready(struct wl_listener *listener,void *data){
+  (void)data;(void)listener;
   //Raised when XWayland is ready to accept connections
   wlr_log(WLR_INFO,"Xwayland server running");
 }
 
 void xwayland_surface_map(struct wl_listener *listener,void *data){
+  (void)data;
   //Called when the X11 surface is ready to be displayed
   struct sandwl_xwayland_surface *surface=wl_container_of(listener,surface,map);
   
@@ -32,6 +34,7 @@ void xwayland_surface_map(struct wl_listener *listener,void *data){
 }
 
 void xwayland_surface_unmap(struct wl_listener *listener,void *data){
+  (void)data;
   //Called when the X11 surface is hidden or closed
   struct sandwl_xwayland_surface *surface=wl_container_of(listener,surface,unmap);
   wl_list_remove(&surface->link);
@@ -45,6 +48,7 @@ void xwayland_surface_unmap(struct wl_listener *listener,void *data){
 }
 
 void xwayland_surface_associate(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_xwayland_surface *surface=wl_container_of(listener,surface,associate);
   //Now xwayland_surface->surface is valid, listen to its map/unmap events
   surface->map.notify=xwayland_surface_map;
@@ -54,12 +58,14 @@ void xwayland_surface_associate(struct wl_listener *listener,void *data){
 }
 
 void xwayland_surface_dissociate(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_xwayland_surface *surface=wl_container_of(listener,surface,dissociate);
   wl_list_remove(&surface->map.link);
   wl_list_remove(&surface->unmap.link);
 }
 
 void xwayland_surface_destroy(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_xwayland_surface *surface=wl_container_of(listener,surface,destroy);
   wl_list_remove(&surface->associate.link);
   wl_list_remove(&surface->dissociate.link);
@@ -77,6 +83,7 @@ void xwayland_surface_request_configure(struct wl_listener *listener,void *data)
 }
 
 void xwayland_surface_request_move(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_xwayland_surface *surface=wl_container_of(listener,surface,request_move);
   struct wlr_box empty_box={0};
   begin_interactive(surface->server, surface->scene_tree, SANDWL_CURSOR_MOVE, 0, empty_box);

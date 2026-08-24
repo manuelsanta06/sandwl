@@ -119,6 +119,7 @@ void server_cursor_axis(struct wl_listener *listener,void *data){
 }
 
 void server_cursor_frame(struct wl_listener *listener,void *data){
+  (void)data;
   //forwarded by the cursor whe a pointer emits an frame event
   struct sandwl_server *server=wl_container_of(listener,server,cursor_frame);
   //notify the client with pointer focus of the frame event
@@ -131,6 +132,7 @@ void server_new_pointer(struct sandwl_server *server,struct wlr_input_device *de
 }
 
 void handle_pointer_constraint_destroy(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_pointer_constraint *sandwl_constraint=wl_container_of(listener,sandwl_constraint,destroy);
   struct sandwl_server *server=sandwl_constraint->server;
 

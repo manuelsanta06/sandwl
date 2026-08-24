@@ -8,6 +8,7 @@
 
 
 void decoration_handle_destroy(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_decoration *deco=wl_container_of(listener,deco,destroy);
   if(deco->toplevel)
     deco->toplevel->decoration=NULL;
@@ -18,6 +19,7 @@ void decoration_handle_destroy(struct wl_listener *listener,void *data){
 }
 
 void decoration_handle_request_mode(struct wl_listener *listener,void *data){
+  (void)data;
   struct sandwl_decoration *deco=wl_container_of(listener,deco,request_mode);
 
   if(deco->wlr_decoration->toplevel->base->initialized){
@@ -26,6 +28,7 @@ void decoration_handle_request_mode(struct wl_listener *listener,void *data){
 }
 
 void server_new_xdg_decoration(struct wl_listener *listener,void *data){
+  (void)listener;
   struct wlr_xdg_toplevel_decoration_v1 *wlr_deco=data;
   struct wlr_xdg_surface *xdg_surface=wlr_deco->toplevel->base;
   struct wlr_scene_tree *scene_tree=xdg_surface->data;
