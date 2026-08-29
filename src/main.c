@@ -77,6 +77,42 @@ void printHelp(char* programName){
   printf("\t-v            sets verbosity to DEBUG level\n");
 }
 
+static void server_remove_listeners(struct sandwl_server *server){
+  struct wl_listener *listeners[]={
+    &server->new_xdg_toplevel,
+    &server->new_xdg_popup,
+    &server->new_layer_surface,
+    &server->new_xdg_decoration,
+    &server->cursor_motion,
+    &server->cursor_motion_absolute,
+    &server->cursor_button,
+    &server->cursor_axis,
+    &server->cursor_frame,
+    &server->new_pointer_constraint,
+    &server->new_input,
+    &server->request_cursor,
+    &server->pointer_focus_change,
+    &server->request_set_selection,
+    &server->request_set_primary_selection,
+    &server->request_start_drag,
+    &server->start_drag,
+    &server->new_output,
+  };
+
+  for(size_t i=0;i<sizeof(listeners)/sizeof(listeners[0]);i++){
+    if(listeners[i] && listeners[i]->link.next){
+      wl_list_remove(&listeners[i]->link);
+    }
+  }
+
+  if(server->xwayland_ready.link.next){
+    wl_list_remove(&server->xwayland_ready.link);
+  }
+  if(server->new_xwayland_surface.link.next){
+    wl_list_remove(&server->new_xwayland_surface.link);
+  }
+}
+
 int main(int argc, char *argv[]){
   wlr_log_init(WLR_ERROR,NULL);
   char *startup_cmd=NULL;
@@ -129,11 +165,13 @@ int main(int argc, char *argv[]){
   server.xwayland=wlr_xwayland_create(server.wl_display,server.compositor,true);
   if(server.xwayland){
     setenv("DISPLAY",server.xwayland->display_name,true);
+    server.xwayland_ready.notify=server_xwayland_ready;
+    wl_signal_add(&server.xwayland->events.ready,&server.xwayland_ready);
+    server.new_xwayland_surface.notify=server_new_xwayland_surface;
+    wl_signal_add(&server.xwayland->events.new_surface,&server.new_xwayland_surface);
+  }else{
+    wlr_log(WLR_ERROR,"XWayland unavailable; continuing without XWayland");
   }
-  server.xwayland_ready.notify=server_xwayland_ready;
-  wl_signal_add(&server.xwayland->events.ready,&server.xwayland_ready);
-  server.new_xwayland_surface.notify=server_new_xwayland_surface;
-  wl_signal_add(&server.xwayland->events.new_surface,&server.new_xwayland_surface);
 
   //data device manager handles the clipboard
   wlr_data_device_manager_create(server.wl_display);
@@ -229,7 +267,9 @@ int main(int argc, char *argv[]){
   //Add a Unix socket to the Wayland display
   const char *socket=wl_display_add_socket_auto(server.wl_display);
   if(!socket){
+    server_remove_listeners(&server);
     wlr_backend_destroy(server.backend);
+    wl_display_destroy(server.wl_display);
     return 1;
   }
 
@@ -237,6 +277,7 @@ int main(int argc, char *argv[]){
   //this enumerates outputs and inputs
   if(!wlr_backend_start(server.backend)){
     wlr_log(WLR_ERROR,"Failed to start backend\n");
+    server_remove_listeners(&server);
     wlr_backend_destroy(server.backend);
     wl_display_destroy(server.wl_display);
     return 1;
@@ -254,22 +295,7 @@ int main(int argc, char *argv[]){
 
 
   wl_display_destroy_clients(server.wl_display);
-
-  wl_list_remove(&server.new_xdg_toplevel.link);
-  wl_list_remove(&server.new_xdg_popup.link);
-
-  wl_list_remove(&server.cursor_motion.link);
-  wl_list_remove(&server.cursor_motion_absolute.link);
-  wl_list_remove(&server.cursor_button.link);
-  wl_list_remove(&server.cursor_axis.link);
-  wl_list_remove(&server.cursor_frame.link);
-
-  wl_list_remove(&server.new_input.link);
-  wl_list_remove(&server.request_cursor.link);
-  wl_list_remove(&server.pointer_focus_change.link);
-  wl_list_remove(&server.request_set_selection.link);
-
-  wl_list_remove(&server.new_output.link);
+  server_remove_listeners(&server);
 
   wlr_scene_node_destroy(&server.scene->tree.node);
   wlr_xcursor_manager_destroy(server.cursor_mgr);
