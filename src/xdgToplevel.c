@@ -62,18 +62,31 @@ void xdg_toplevel_commit(struct wl_listener *listener,void *data){
 
 
 void xdg_toplevel_request_move(struct wl_listener *listener,void *data){
-  (void)data;
   //raised when a client would like to begin an interactive move
-  //TODO: prevent the client from requesting this whenever they want
+  struct wlr_xdg_toplevel_move_event *event=data;
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_move);
+  struct sandwl_server *server=toplevel->server;
+
+  //The serial must belong to a recent pointer button event on this surface
+  //Without this check any client could start moving itself at any time
+  if(!wlr_seat_validate_pointer_grab_serial(server->seat,toplevel->xdg_toplevel->base->surface,event->serial))
+    return;
+
   begin_interactive(toplevel->server,toplevel->scene_tree,SANDWL_CURSOR_MOVE,0,(struct wlr_box){0});
 }
 
 void xdg_toplevel_request_resize(struct wl_listener *listener,void *data){
   //raised when a client would like to begin an interactive resize
-  //TODO: prevent the client from requesting this whenever they want
   struct wlr_xdg_toplevel_resize_event *event=data;
   struct sandwl_toplevel *toplevel=wl_container_of(listener,toplevel,request_resize);
+  struct sandwl_server *server=toplevel->server;
+
+  //The serial must belong to a recent pointer button event on this surface
+  //Without this check any client could start resizing itself at any time
+  if(!wlr_seat_validate_pointer_grab_serial(server->seat,toplevel->xdg_toplevel->base->surface,event->serial))
+    return;
+  
+
   begin_interactive(toplevel->server,toplevel->scene_tree,SANDWL_CURSOR_RESIZE,event->edges,
       toplevel->xdg_toplevel->base->geometry);
 }
