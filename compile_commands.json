@@ -1,5 +1,29 @@
 [
   {
+    "file": "src/decoration.c",
+    "arguments": [
+      "/usr/sbin/cc",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Isrc",
+      "-Ibuild",
+      "-MMD",
+      "-MP",
+      "-DVERSION=\"0.0.0\"",
+      "-I/usr/include/wlroots-0.20",
+      "-I/usr/include/pixman-1",
+      "-I/usr/include/libdrm",
+      "-c",
+      "src/decoration.c",
+      "-DWLR_USE_UNSTABLE",
+      "-o",
+      "build/decoration.o"
+    ],
+    "directory": "/home/santa/prog/c/compositor",
+    "output": "build/decoration.o"
+  },
+  {
     "file": "src/layerShell.c",
     "arguments": [
       "/usr/sbin/cc",
@@ -214,5 +238,29 @@
     ],
     "directory": "/home/santa/prog/c/compositor",
     "output": "build/xdgToplevel.o"
+  },
+  {
+    "file": "src/xwayland.c",
+    "arguments": [
+      "/usr/sbin/cc",
+      "-O2",
+      "-Wall",
+      "-Wextra",
+      "-Isrc",
+      "-Ibuild",
+      "-MMD",
+      "-MP",
+      "-DVERSION=\"0.0.0\"",
+      "-I/usr/include/wlroots-0.20",
+      "-I/usr/include/pixman-1",
+      "-I/usr/include/libdrm",
+      "-c",
+      "src/xwayland.c",
+      "-DWLR_USE_UNSTABLE",
+      "-o",
+      "build/xwayland.o"
+    ],
+    "directory": "/home/santa/prog/c/compositor",
+    "output": "build/xwayland.o"
   }
 ]

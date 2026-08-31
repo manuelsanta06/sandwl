@@ -40,6 +40,7 @@
 #include "outputs.h"
 #include "types.h"
 #include "seats.h"
+#include "config/luaConfig.h"
 
 
 void server_new_input(struct wl_listener *listener,void *data){
@@ -263,10 +264,28 @@ int main(int argc, char *argv[]){
   server.start_drag.notify=seat_start_drag;
   wl_signal_add(&server.seat->events.start_drag,&server.start_drag);
 
+  server.lua=sandwl_lua_create();
+  if(!server.lua){
+    server_remove_listeners(&server);
+    wlr_backend_destroy(server.backend);
+    wl_display_destroy(server.wl_display);
+    return 1;
+  }
+
+  enum sandwl_lua_config_result config_result=sandwl_lua_load_config(server.lua,NULL);
+  if(config_result==SANDWL_LUA_CONFIG_FAILED){
+    sandwl_lua_destroy(server.lua);
+    server_remove_listeners(&server);
+    wlr_backend_destroy(server.backend);
+    wl_display_destroy(server.wl_display);
+    return 1;
+  }
+
 
   //Add a Unix socket to the Wayland display
   const char *socket=wl_display_add_socket_auto(server.wl_display);
   if(!socket){
+    sandwl_lua_destroy(server.lua);
     server_remove_listeners(&server);
     wlr_backend_destroy(server.backend);
     wl_display_destroy(server.wl_display);
@@ -277,6 +296,7 @@ int main(int argc, char *argv[]){
   //this enumerates outputs and inputs
   if(!wlr_backend_start(server.backend)){
     wlr_log(WLR_ERROR,"Failed to start backend\n");
+    sandwl_lua_destroy(server.lua);
     server_remove_listeners(&server);
     wlr_backend_destroy(server.backend);
     wl_display_destroy(server.wl_display);
@@ -298,6 +318,7 @@ int main(int argc, char *argv[]){
   server_remove_listeners(&server);
 
   wlr_scene_node_destroy(&server.scene->tree.node);
+  sandwl_lua_destroy(server.lua);
   wlr_xcursor_manager_destroy(server.cursor_mgr);
   wlr_cursor_destroy(server.cursor);
   wlr_allocator_destroy(server.allocator);

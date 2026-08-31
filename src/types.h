@@ -4,6 +4,8 @@
 #include <wlr/util/box.h>
 #include <wlr/xwayland.h>
 
+struct sandwl_lua;
+
 
 enum sandwl_cursor_mode{
   SANDWL_CURSOR_PASSTHROUGH,
@@ -12,6 +14,7 @@ enum sandwl_cursor_mode{
 };
 
 struct sandwl_server{
+  struct sandwl_lua                       *lua;
   struct wlr_session                      *session;
 
   struct wl_display                       *wl_display;

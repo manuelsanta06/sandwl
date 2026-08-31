@@ -3,7 +3,7 @@ VERSION ?= 0.0.0
 
 PKG_CONFIG ?= pkg-config
 
-PKGS = wlroots-0.20 wayland-server xkbcommon
+PKGS = wlroots-0.20 wayland-server xkbcommon lua54
 
 CFLAGS_PKG_CONFIG != $(PKG_CONFIG) --cflags $(PKGS)
 LIBS != $(PKG_CONFIG) --libs $(PKGS)
@@ -17,8 +17,8 @@ CFLAGS ?= -O2
 CFLAGS += -Wall -Wextra -Isrc -Ibuild -MMD -MP -DVERSION=\"$(VERSION)\" $(CFLAGS_PKG_CONFIG)
 LDFLAGS ?=
 
-SRCS = $(wildcard src/*.c)
-OBJS = $(SRCS:src/%.c=build/%.o)
+SRCS = $(wildcard src/*.c) $(wildcard src/*/*.c)
+OBJS = $(patsubst src/%.c,build/%.o,$(SRCS))
 
 DEPS = $(OBJS:.o=.d)
 
@@ -40,6 +40,7 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET) $(LDFLAGS) $(LIBS)
 
 build/%.o: src/%.c $(LAYER_SHELL_HDR) | build
+	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -DWLR_USE_UNSTABLE -o $@
 
 clean:
