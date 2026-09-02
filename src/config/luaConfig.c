@@ -1,5 +1,6 @@
 #include "luaConfig.h"
 #include "luaBindings.h"
+#include "keybindings.h"
 
 #include <errno.h>
 #include <stdbool.h>
@@ -14,8 +15,11 @@
 
 #include <wlr/util/log.h>
 
+#include "types.h"
+
 struct sandwl_lua {
   lua_State *state;
+  struct sandwl_server *server;
 };
 
 static char *default_config_path(void){
@@ -55,7 +59,7 @@ static enum sandwl_lua_config_result check_config_file(const char *path){
   return SANDWL_LUA_CONFIG_LOADED;
 }
 
-struct sandwl_lua *sandwl_lua_create(void){
+struct sandwl_lua *sandwl_lua_create(struct sandwl_server *server){
   struct sandwl_lua *lua=calloc(1,sizeof(*lua));
   if(!lua){
     wlr_log(WLR_ERROR,"Unable to allocate Lua runtime");
@@ -69,8 +73,9 @@ struct sandwl_lua *sandwl_lua_create(void){
     return NULL;
   }
 
+  lua->server=server;
   luaL_openlibs(lua->state);
-  sandwl_lua_register_api(lua->state);
+  sandwl_lua_register_api(lua->state,server);
   return lua;
 }
 
@@ -117,6 +122,7 @@ enum sandwl_lua_config_result sandwl_lua_load_config(struct sandwl_lua *lua, con
 void sandwl_lua_destroy(struct sandwl_lua *lua){
   if(!lua)
     return;
+  sandwl_keybindings_destroy(lua->server,lua->state);
   if(lua->state)
     lua_close(lua->state);
   free(lua);

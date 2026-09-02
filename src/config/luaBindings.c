@@ -1,4 +1,6 @@
 #include "luaBindings.h"
+#include "../keybindings.h"
+#include "../types.h"
 
 #include <errno.h>
 #include <lua.h>
@@ -11,7 +13,13 @@
 #include <wlr/util/log.h>
 
 static int lua_sand_bind(lua_State *state){
-  (void)state;
+  const char *keys=luaL_checkstring(state,1);
+  luaL_checktype(state,2,LUA_TFUNCTION);
+  struct sandwl_server *server=lua_touserdata(state,lua_upvalueindex(1));
+
+  if(!server||!sandwl_keybinding_add(server,state,keys,2))
+    return luaL_error(state,"unable to register keybinding '%s'",keys);
+
   return 0;
 }
 
@@ -95,14 +103,16 @@ static const luaL_Reg cameras_functions[]={
   {NULL,NULL}
 };
 
-void sandwl_lua_register_api(lua_State *state){
+void sandwl_lua_register_api(lua_State *state,struct sandwl_server *server){
   luaL_newmetatable(state,"sand.camera");
   luaL_setfuncs(state,camera_methods,0);
   lua_pushvalue(state,-1);
   lua_setfield(state,-2,"__index");
   lua_pop(state,1);
 
-  luaL_newlib(state,sand_functions);
+  luaL_newlibtable(state,sand_functions);
+  lua_pushlightuserdata(state,server);
+  luaL_setfuncs(state,sand_functions,1);
   luaL_newlib(state,cameras_functions);
   lua_setfield(state,-2,"cameras");
   lua_setglobal(state,"sand");

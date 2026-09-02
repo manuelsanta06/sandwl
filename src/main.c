@@ -247,6 +247,7 @@ int main(int argc, char *argv[]){
   //configures a "seat"(up to one keyboard, pointer, touch, and drawing tablet device)
   //and a listener for new devices
   wl_list_init(&server.keyboards);
+  wl_list_init(&server.keybindings);
   server.new_input.notify=server_new_input;
   wl_signal_add(&server.backend->events.new_input,&server.new_input);
   server.seat=wlr_seat_create(server.wl_display,"seat0");
@@ -275,7 +276,7 @@ int main(int argc, char *argv[]){
   setenv("WAYLAND_DISPLAY",socket,true);
 
   //run lua config
-  server.lua=sandwl_lua_create();
+  server.lua=sandwl_lua_create(&server);
   if(!server.lua){
     server_remove_listeners(&server);
     wlr_backend_destroy(server.backend);

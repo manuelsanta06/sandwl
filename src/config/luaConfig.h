@@ -3,6 +3,7 @@
 #include <stdbool.h>
 
 struct sandwl_lua;
+struct sandwl_server;
 
 enum sandwl_lua_config_result {
   SANDWL_LUA_CONFIG_LOADED,
@@ -11,7 +12,7 @@ enum sandwl_lua_config_result {
 };
 
 /* Create an empty Lua runtime */
-struct sandwl_lua *sandwl_lua_create(void);
+struct sandwl_lua *sandwl_lua_create(struct sandwl_server *server);
 
 /*
  * Execute a configuration file. Passing NULL uses the default path:

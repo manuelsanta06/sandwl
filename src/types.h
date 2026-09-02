@@ -49,6 +49,7 @@ struct sandwl_server{
 
   struct wlr_seat                         *seat;
   struct wl_listener                      new_input;
+  struct wl_list                          keybindings;
   struct wl_listener                      request_cursor;
   struct wl_listener                      pointer_focus_change;
   struct wl_listener                      request_set_selection;
