@@ -1,4 +1,5 @@
 #include "luaConfig.h"
+#include "luaBindings.h"
 
 #include <errno.h>
 #include <stdbool.h>
@@ -69,6 +70,7 @@ struct sandwl_lua *sandwl_lua_create(void){
   }
 
   luaL_openlibs(lua->state);
+  sandwl_lua_register_api(lua->state);
   return lua;
 }
 

@@ -264,6 +264,17 @@ int main(int argc, char *argv[]){
   server.start_drag.notify=seat_start_drag;
   wl_signal_add(&server.seat->events.start_drag,&server.start_drag);
 
+  //add a unix socket to the wayland display
+  const char *socket=wl_display_add_socket_auto(server.wl_display);
+  if(!socket){
+    server_remove_listeners(&server);
+    wlr_backend_destroy(server.backend);
+    wl_display_destroy(server.wl_display);
+    return 1;
+  }
+  setenv("WAYLAND_DISPLAY",socket,true);
+
+  //run lua config
   server.lua=sandwl_lua_create();
   if(!server.lua){
     server_remove_listeners(&server);
@@ -274,17 +285,6 @@ int main(int argc, char *argv[]){
 
   enum sandwl_lua_config_result config_result=sandwl_lua_load_config(server.lua,NULL);
   if(config_result==SANDWL_LUA_CONFIG_FAILED){
-    sandwl_lua_destroy(server.lua);
-    server_remove_listeners(&server);
-    wlr_backend_destroy(server.backend);
-    wl_display_destroy(server.wl_display);
-    return 1;
-  }
-
-
-  //Add a Unix socket to the Wayland display
-  const char *socket=wl_display_add_socket_auto(server.wl_display);
-  if(!socket){
     sandwl_lua_destroy(server.lua);
     server_remove_listeners(&server);
     wlr_backend_destroy(server.backend);
@@ -303,7 +303,6 @@ int main(int argc, char *argv[]){
     return 1;
   }
 
-  setenv("WAYLAND_DISPLAY",socket,true);
   if(startup_cmd){
     if(fork()==0){
       execl("/bin/sh","/bin/sh","-c",startup_cmd,(void*)NULL);
