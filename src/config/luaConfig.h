@@ -1,6 +1,7 @@
 #pragma once
 
 #include <stdbool.h>
+#include <lua.h>
 
 struct sandwl_lua;
 struct sandwl_server;
@@ -13,6 +14,8 @@ enum sandwl_lua_config_result {
 
 /* Create an empty Lua runtime */
 struct sandwl_lua *sandwl_lua_create(struct sandwl_server *server);
+
+lua_State *sandwl_lua_get_state(struct sandwl_lua *lua);
 
 /*
  * Execute a configuration file. Passing NULL uses the default path:

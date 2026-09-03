@@ -10,6 +10,8 @@
 
 #include "types.h"
 #include "serverKeyboard.h"
+#include "keybindings.h"
+#include "config/luaConfig.h"
 
 
 void keyboard_handle_modifiers(struct wl_listener *listener,void *data){
@@ -46,22 +48,9 @@ void keyboard_handle_key(struct wl_listener *listener,void *data){
       }
     }
   }
-  if(false){
-    //handle system keybindings here, before giving them to toplevels
-    //set 'handled' to true if keys get used
-  }
-  //examble
-  if((modifiers&WLR_MODIFIER_ALT)&&event->state==WL_KEYBOARD_KEY_STATE_PRESSED){
-    for (int i=0;i<nsyms;i++){
-      switch(syms[i]){
-        case XKB_KEY_q:
-          if(fork()==0)
-            execl("/bin/sh","/bin/sh","-c","kitty",(void*)NULL);
-          break;
-        default:
-          break;
-      }
-    }
+  if(!handled&&server->lua){
+    handled=sandwl_keybindings_handle(server,sandwl_lua_get_state(server->lua),
+      syms,nsyms,modifiers,event->state);
   }
   if(!handled){
     //pass keys to client

@@ -79,6 +79,10 @@ struct sandwl_lua *sandwl_lua_create(struct sandwl_server *server){
   return lua;
 }
 
+lua_State *sandwl_lua_get_state(struct sandwl_lua *lua){
+  return lua?lua->state:NULL;
+}
+
 enum sandwl_lua_config_result sandwl_lua_load_config(struct sandwl_lua *lua, const char *path){
   if(!lua||!lua->state)
     return SANDWL_LUA_CONFIG_FAILED;
