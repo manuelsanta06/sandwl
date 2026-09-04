@@ -3,6 +3,8 @@
 #include <wayland-server-core.h>
 #include <wlr/util/box.h>
 #include <wlr/xwayland.h>
+#include <stdbool.h>
+#include <stddef.h>
 
 struct sandwl_lua;
 
@@ -59,6 +61,10 @@ struct sandwl_server{
   struct wl_listener                      drag_icon_destroy;
   struct wl_listener                      start_drag;
   struct wl_list                          keyboards;
+  bool                                    pointer_grab_active;
+  size_t                                  pointer_button_count;
+  double                                  pointer_grab_x, pointer_grab_y;
+  double                                  pointer_grab_sx, pointer_grab_sy;
   enum sandwl_cursor_mode                 cursor_mode;
   struct wlr_scene_tree                   *grabbed_tree;
   double grab_x, grab_y;

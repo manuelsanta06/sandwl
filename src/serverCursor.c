@@ -57,8 +57,31 @@ void server_cursor_button(struct wl_listener *listener,void *data){
   //forwarded by the cursor when a pointer emits a button event
   struct sandwl_server *server=wl_container_of(listener,server,cursor_button);
   struct wlr_pointer_button_event *event=data;
+
+  if(event->state==WL_POINTER_BUTTON_STATE_PRESSED&&
+      server->pointer_button_count==0&&!server->pointer_grab_active){
+    double sx,sy;
+    struct wlr_surface *surface=NULL;
+    if(desktop_tree_at(server,server->cursor->x,server->cursor->y,
+        &surface,&sx,&sy)&&surface){
+      wlr_seat_pointer_notify_enter(server->seat,surface,sx,sy);
+      server->pointer_grab_active=true;
+      server->pointer_grab_x=server->cursor->x;
+      server->pointer_grab_y=server->cursor->y;
+      server->pointer_grab_sx=sx;
+      server->pointer_grab_sy=sy;
+    }
+  }
+
   //notify the client with pointer focus
   wlr_seat_pointer_notify_button(server->seat,event->time_msec,event->button,event->state);
+  if(event->state==WL_POINTER_BUTTON_STATE_PRESSED){
+    server->pointer_button_count++;
+  }else if(server->pointer_button_count>0){
+    server->pointer_button_count--;
+    if(server->pointer_button_count==0)
+      server->pointer_grab_active=false;
+  }
   if(event->state==WL_POINTER_BUTTON_STATE_RELEASED){
     //if button released exit interactive move/resize mode
     reset_cursor_mode(server);

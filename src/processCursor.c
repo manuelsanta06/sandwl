@@ -30,7 +30,8 @@ void begin_interactive(struct sandwl_server *server,struct wlr_scene_tree *tree,
 
     server->resize_edges=edges;
   }
-  wlr_seat_pointer_clear_focus(server->seat);
+  if(!server->pointer_grab_active)
+    wlr_seat_pointer_notify_clear_focus(server->seat);
 }
 
 
@@ -53,6 +54,13 @@ void process_cursor_motion(struct sandwl_server *server,uint32_t time){
     return;
   }
 
+  if(server->pointer_grab_active){
+    double sx=server->pointer_grab_sx+server->cursor->x-server->pointer_grab_x;
+    double sy=server->pointer_grab_sy+server->cursor->y-server->pointer_grab_y;
+    wlr_seat_pointer_notify_motion(server->seat,time,sx,sy);
+    return;
+  }
+
   //otherwise, find the toplevel under the pointer and send the event along
   double sx,sy;
   struct wlr_surface *surface=NULL;
@@ -68,6 +76,6 @@ void process_cursor_motion(struct sandwl_server *server,uint32_t time){
     wlr_seat_pointer_notify_motion(server->seat,time,sx,sy);
   }else{
     //clears pointer focus
-    wlr_seat_pointer_clear_focus(server->seat);
+    wlr_seat_pointer_notify_clear_focus(server->seat);
   }
 }
