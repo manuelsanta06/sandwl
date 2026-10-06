@@ -35,9 +35,9 @@ void keyboard_handle_key(struct wl_listener *listener,void *data){
   //Get a list of keysyms based on the keymap for this keyboard
   const xkb_keysym_t *syms;
   int nsyms=xkb_state_key_get_syms(keyboard->wlr_keyboard->xkb_state,keycode,&syms);
+  uint32_t modifiers=wlr_keyboard_get_modifiers(keyboard->wlr_keyboard);
 
   bool handled=false;
-  uint32_t modifiers=wlr_keyboard_get_modifiers(keyboard->wlr_keyboard);
   //tty keybindings check
   if(!handled&&server->session){
     for(int i=0;i<nsyms;i++){
@@ -49,8 +49,7 @@ void keyboard_handle_key(struct wl_listener *listener,void *data){
     }
   }
   if(!handled&&server->lua){
-    handled=sandwl_keybindings_handle(server,sandwl_lua_get_state(server->lua),
-      syms,nsyms,modifiers,event->state);
+    handled=sandwl_keybindings_handle(server,sandwl_lua_get_state(server->lua),syms,nsyms,modifiers,event->state);
   }
   if(!handled){
     //pass keys to client

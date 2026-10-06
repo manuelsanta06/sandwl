@@ -17,7 +17,7 @@
 
 #include "types.h"
 
-struct sandwl_lua {
+struct sandwl_lua{
   lua_State *state;
   struct sandwl_server *server;
 };

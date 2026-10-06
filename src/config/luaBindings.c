@@ -53,12 +53,12 @@ static int lua_sand_log(lua_State *state){
 
 static int lua_sand_quit(lua_State *state){
   (void)state;
-  return 0;
+  exit(0);
 }
 
 static int lua_sand_version(lua_State *state){
-  (void)state;
-  return 0;
+  lua_pushstring(state,VERSION);
+  return 1;
 }
 
 static int lua_sand_camera_jump_to(lua_State *state){
