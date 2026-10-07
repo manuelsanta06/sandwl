@@ -1,9 +1,10 @@
-CC ?= gcc
-VERSION ?= 0.0.0
+CC?=gcc
+CXX?=g++
+VERSION?=0.0.0
 
 PKG_CONFIG ?= pkg-config
 
-PKGS = wlroots-0.20 wayland-server xkbcommon lua54
+PKGS = wlroots-0.20 wayland-server xkbcommon lua54 egl glesv2
 
 CFLAGS_PKG_CONFIG != $(PKG_CONFIG) --cflags $(PKGS)
 LIBS != $(PKG_CONFIG) --libs $(PKGS)
@@ -15,10 +16,20 @@ LAYER_SHELL_HDR = build/wlr-layer-shell-unstable-v1-protocol.h
 
 CFLAGS ?= -O2
 CFLAGS += -Wall -Wextra -Isrc -Ibuild -MMD -MP -DVERSION=\"$(VERSION)\" $(CFLAGS_PKG_CONFIG)
+
+CXXFLAGS ?= -O2
+CXXFLAGS += -Wall -Wextra -Isrc -Ibuild -MMD -MP -DVERSION=\"$(VERSION)\" $(CFLAGS_PKG_CONFIG) -std=c++23
+
 LDFLAGS ?=
 
-SRCS = $(wildcard src/*.c) $(wildcard src/*/*.c)
-OBJS = $(patsubst src/%.c,build/%.o,$(SRCS))
+
+C_SRCS = $(wildcard src/*.c) $(wildcard src/*/*.c)
+CXX_SRCS = $(wildcard src/*.cpp) $(wildcard src/*/*.cpp)
+
+C_OBJS = $(patsubst src/%.c,build/%.o,$(C_SRCS))
+CXX_OBJS = $(patsubst src/%.cpp,build/%.o,$(CXX_SRCS))
+OBJS = $(C_OBJS) $(CXX_OBJS)
+
 
 DEPS = $(OBJS:.o=.d)
 
@@ -37,11 +48,15 @@ $(LAYER_SHELL_HDR): | build
 	$(WAYLAND_SCANNER) server-header $(LAYER_SHELL_XML) $@
 
 $(TARGET): $(OBJS)
-	$(CC) $(CFLAGS) $(OBJS) -o $(TARGET) $(LDFLAGS) $(LIBS)
+	$(CXX) $(CXXFLAGS) $(OBJS) -o $(TARGET) $(LDFLAGS) $(LIBS)
 
 build/%.o: src/%.c $(LAYER_SHELL_HDR) | build
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -c $< -DWLR_USE_UNSTABLE -o $@
+
+build/%.o: src/%.cpp | build
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) -c $< -DWLR_USE_UNSTABLE -o $@
 
 clean:
 	rm -rf build/

@@ -10,12 +10,12 @@ extern "C" {
 
 typedef struct Engine3D Engine3D;
 
-Engine3D* engineCreate(int width, int height);
+Engine3D* engineCreate(int width,int height);
 void engineDestroy(Engine3D* engine);
 
-void engineUpdate(Engine3D* engine, float delta_time);
+void engineUpdate(Engine3D* engine,float delta_time);
 
-bool engineRenderFrame(Engine3D* engine, uint32_t* pixel_buffer, int stride);
+bool engineRenderFrame(Engine3D* engine,uint32_t* pixel_buffer,int stride);
 
 #ifdef __cplusplus
 }
