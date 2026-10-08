@@ -1,41 +1,25 @@
 #include "engineApi.h"
-#include <cstdint>
+#include "coreEngine.hpp"
 
-class CoreEngine{
-  public:
-  CoreEngine(int width,int height){
-  }
-
-  ~CoreEngine(){
-  }
-
-  void update(float delta_time){
-  }
-
-  bool renderFrame(uint32_t* pixel_buffer,int stride){
-    return true; 
-  }
-};
-
-Engine3D* engineCreate(int width,int height){
-  CoreEngine* engine=new CoreEngine(width,height);
+Engine3D* engine_create(int width,int height,EGLDisplay display,EGLContext context){
+  CoreEngine* engine=new CoreEngine(width,height,display,context);
   return reinterpret_cast<Engine3D*>(engine);
 }
 
-void engineDestroy(Engine3D* engine_ptr){
+void engine_destroy(Engine3D* engine_ptr){
   if(!engine_ptr)return;
   CoreEngine* engine=reinterpret_cast<CoreEngine*>(engine_ptr);
   delete engine;
 }
 
-void engineUpdate(Engine3D* engine_ptr,float delta_time){
+void engine_update(Engine3D* engine_ptr,float delta_time){
   if(!engine_ptr)return;
   CoreEngine* engine=reinterpret_cast<CoreEngine*>(engine_ptr);
   engine->update(delta_time);
 }
 
-bool engineRenderFrame(Engine3D* engine_ptr,uint32_t* pixel_buffer,int stride){
-  if(!engine_ptr)return false;
-  CoreEngine* engine=reinterpret_cast<CoreEngine*>(engine_ptr);
-  return engine->renderFrame(pixel_buffer,stride);
+uint32_t engine_get_texture(Engine3D* engine_ptr){
+  if (!engine_ptr) return 0;
+  CoreEngine* engine = reinterpret_cast<CoreEngine*>(engine_ptr);
+  return engine->getTextureID();
 }

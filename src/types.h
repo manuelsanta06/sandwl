@@ -5,6 +5,7 @@
 #include <wlr/xwayland.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include "world/engineApi.h"
 
 struct sandwl_lua;
 
@@ -18,6 +19,7 @@ enum sandwl_cursor_mode{
 struct sandwl_server{
   struct sandwl_lua                       *lua;
   struct wlr_session                      *session;
+  Engine3D                                *engine;
 
   struct wl_display                       *wl_display;
   struct wlr_backend                      *backend;

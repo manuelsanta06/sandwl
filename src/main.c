@@ -8,6 +8,8 @@
 
 #include <wlr/render/wlr_renderer.h>
 #include <wlr/render/allocator.h>
+#include <wlr/render/gles2.h>
+#include <wlr/render/egl.h>
 
 #include <wlr/types/wlr_pointer_constraints_v1.h>
 #include <wlr/types/wlr_primary_selection_v1.h>
@@ -150,6 +152,17 @@ int main(int argc, char *argv[]){
   if(server.renderer==NULL){
     wlr_log(WLR_ERROR,"failed to create wlr_renderer");return 1;
   }
+
+  struct wlr_egl *wlr_egl = wlr_gles2_renderer_get_egl(server.renderer);
+  if(wlr_egl){
+    server.engine=engine_create(800,600,wlr_egl_get_display(wlr_egl),wlr_egl_get_context(wlr_egl));
+
+    if(server.engine)
+      wlr_log(WLR_INFO,"3D engine running with openGl`s EGL/GLES2");
+  }else{
+    wlr_log(WLR_ERROR,"wlroots`s renderer is not using EGL/GLES2. 3D engine disabled.");
+  }
+
   wlr_renderer_init_wl_display(server.renderer, server.wl_display);
   server.allocator=wlr_allocator_autocreate(server.backend,server.renderer);
   if(server.allocator==NULL){
