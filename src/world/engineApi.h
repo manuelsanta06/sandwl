@@ -18,7 +18,6 @@ void engine_destroy(Engine3D* engine);
 void engine_update(Engine3D* engine,float delta_time);
 
 bool engineRenderFrame(Engine3D* engine,uint32_t* pixel_buffer,int stride);
-uint32_t engine_get_texture(Engine3D* engine);
 
 #ifdef __cplusplus
 }

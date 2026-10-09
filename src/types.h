@@ -103,14 +103,18 @@ struct sandwl_pointer_constraint{
 };
 
 struct sandwl_output{
-  struct wl_list        link;
-  struct sandwl_server  *server;
-  struct wlr_output     *wlr_output;
-  struct wlr_box        usable_area;
-  struct wl_list        layers[4];
-  struct wl_listener    frame;
-  struct wl_listener    request_state;
-  struct wl_listener    destroy;
+  struct wl_list          link;
+  struct sandwl_server    *server;
+  struct wlr_output       *wlr_output;
+
+  struct wlr_buffer       *engine_buffer;
+  struct wlr_scene_buffer *engine_node;
+
+  struct wlr_box          usable_area;
+  struct wl_list          layers[4];
+  struct wl_listener      frame;
+  struct wl_listener      request_state;
+  struct wl_listener      destroy;
 };
 
 struct sandwl_layer_surface{

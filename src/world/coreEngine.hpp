@@ -10,8 +10,6 @@ public:
     ~CoreEngine();
 
     void update(float deltaTime);
-    
-    uint32_t getTextureID()const{return colorTexture;}
 
 private:
     int width;
@@ -19,10 +17,4 @@ private:
     
     EGLDisplay eglDisplay;
     EGLContext eglContext;
-
-    GLuint fbo;
-    GLuint colorTexture;
-
-    bool makeCurrent();
-    void initFBO();
 };

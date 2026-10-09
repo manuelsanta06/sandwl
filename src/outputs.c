@@ -1,9 +1,13 @@
 #include <stdbool.h>
 #include <time.h>
 #include <stdlib.h>
+
 #include <wayland-util.h>
+#include <drm_fourcc.h>
+
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_output.h>
+#include <wlr/render/allocator.h>
 #include <wlr/types/wlr_scene.h>
 
 #include "types.h"
@@ -35,8 +39,19 @@ void output_frame(struct wl_listener *listener,void *data){
   struct sandwl_output *output=wl_container_of(listener,output,frame);
   struct wlr_scene *scene=output->server->scene;
 
-  struct wlr_scene_output *scene_output=wlr_scene_get_scene_output(
-    scene,output->wlr_output);
+  struct wlr_scene_output *scene_output=wlr_scene_get_scene_output(scene,output->wlr_output);
+
+  if(output->engine_buffer){
+    struct wlr_render_pass *pass=wlr_renderer_begin_buffer_pass(
+      output->server->renderer,output->engine_buffer,NULL);
+
+    if(pass){
+      engine_update(output->server->engine,0.016f);//TODO: real deltatime. now fixed for 60FPS aprox
+      wlr_render_pass_submit(pass);
+      wlr_scene_node_set_enabled(&output->engine_node->node,false);
+      wlr_scene_node_set_enabled(&output->engine_node->node,true);
+    }
+  }
 
   //Render the scene if needed and commit the output
   wlr_scene_output_commit(scene_output,NULL);
@@ -44,6 +59,9 @@ void output_frame(struct wl_listener *listener,void *data){
   struct timespec now;
   clock_gettime(CLOCK_MONOTONIC,&now);
   wlr_scene_output_send_frame_done(scene_output,&now);
+
+  //forces wayland to render even if no window has changed
+  wlr_output_schedule_frame(output->wlr_output);
 }
 
 void server_new_output(struct wl_listener *listener,void *data){
@@ -82,10 +100,25 @@ void server_new_output(struct wl_listener *listener,void *data){
 
   wl_list_insert(&server->outputs,&output->link);
 
+  uint64_t modifiers[]={DRM_FORMAT_MOD_LINEAR};
+
+  const struct wlr_drm_format form={
+    .format=DRM_FORMAT_ARGB8888,
+    .len=1,
+    .capacity=1,
+    .modifiers=modifiers
+  };
+
+  output->engine_buffer=wlr_allocator_create_buffer(server->allocator,wlr_output->width,wlr_output->height,&form);
+
+  if(output->engine_buffer){
+    output->engine_node=wlr_scene_buffer_create(server->scene_background,output->engine_buffer);
+    wlr_scene_node_set_position(&output->engine_node->node,0,0);
+  }
+
   //adds the output to the layout
   //'wlr_output_layout_add_auto' arranges outputs from left to right
-  struct wlr_output_layout_output *l_output=wlr_output_layout_add_auto(
-    server->output_layout,wlr_output);
+  struct wlr_output_layout_output *l_output=wlr_output_layout_add_auto(server->output_layout,wlr_output);
   struct wlr_scene_output *scene_output=wlr_scene_output_create(server->scene,wlr_output);
   wlr_scene_output_layout_add_output(server->scene_layout,l_output,scene_output);
 }
@@ -93,7 +126,7 @@ void server_new_output(struct wl_listener *listener,void *data){
 void arrange_layers(struct sandwl_output *output){
   struct wlr_box full={0};
   wlr_output_layout_get_box(output->server->output_layout,output->wlr_output,&full);
-  
+
   struct wlr_box usable=full;
 
   for(int i=0;i<4;i++){

@@ -17,9 +17,3 @@ void engine_update(Engine3D* engine_ptr,float delta_time){
   CoreEngine* engine=reinterpret_cast<CoreEngine*>(engine_ptr);
   engine->update(delta_time);
 }
-
-uint32_t engine_get_texture(Engine3D* engine_ptr){
-  if (!engine_ptr) return 0;
-  CoreEngine* engine = reinterpret_cast<CoreEngine*>(engine_ptr);
-  return engine->getTextureID();
-}
