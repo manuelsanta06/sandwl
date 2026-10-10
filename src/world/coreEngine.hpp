@@ -1,20 +1,27 @@
 #pragma once
 
 #include <EGL/egl.h>
-#include <GLES2/gl2.h>
-#include <cstdint>
+#include <GLES3/gl3.h>
 
 class CoreEngine{
 public:
-    CoreEngine(int width,int height,EGLDisplay display,EGLContext context);
-    ~CoreEngine();
+  CoreEngine(int width,int height,EGLDisplay display,EGLContext context);
+  ~CoreEngine();
 
-    void update(float deltaTime);
+  void init();
+
+  void update(float deltaTime);
 
 private:
-    int width;
-    int height;
+  bool isInitialized=false;
+  int width;
+  int height;
+
+  unsigned int shaderProgram;
+
+  unsigned int VAO;
+  unsigned int VBO;
     
-    EGLDisplay eglDisplay;
-    EGLContext eglContext;
+  EGLDisplay eglDisplay;
+  EGLContext eglContext;
 };
