@@ -21,6 +21,7 @@ private:
 
   unsigned int VAO;
   unsigned int VBO;
+  unsigned int EBO;
     
   EGLDisplay eglDisplay;
   EGLContext eglContext;

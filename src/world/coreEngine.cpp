@@ -44,9 +44,14 @@ CoreEngine::CoreEngine(int width,int height,EGLDisplay display,EGLContext contex
 
 void CoreEngine::init(){
   float vertices[]={
-    -0.5f,-0.5f,0.0f,
-     0.5f,-0.5f,0.0f,
-     0.0f, 0.5f,0.0f
+    0.5f,  0.5f, 0.0f,
+    0.5f, -0.5f, 0.0f,
+    -0.5f,-0.5f, 0.0f,
+    -0.5f, 0.5f, 0.0f
+  };
+  unsigned int indices[]={
+    0, 1, 3,
+    1, 2, 3
   };
 
   glGenVertexArrays(1, &VAO);
@@ -55,6 +60,10 @@ void CoreEngine::init(){
   glGenBuffers(1,&VBO);
   glBindBuffer(GL_ARRAY_BUFFER,VBO);
   glBufferData(GL_ARRAY_BUFFER,sizeof(vertices),vertices,GL_STATIC_DRAW);
+
+  glGenBuffers(1,&EBO);
+  glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,EBO);
+  glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(indices),indices,GL_STATIC_DRAW);
 
   glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,3*sizeof(float),(void*)0);
   glEnableVertexAttribArray(0);
@@ -84,24 +93,15 @@ void CoreEngine::update(float deltaTime){
   }
   glViewport(0,0,width,height);
 
-  glClearColor(0.2f, 0.1f, 0.3f, 1.0f);
-  glClear(GL_COLOR_BUFFER_BIT);
-
   glUseProgram(shaderProgram);
   glBindVertexArray(VAO);
 
-  glDrawArrays(GL_TRIANGLES,0,3);
+  glClearColor(0.2f, 0.1f, 0.3f, 1.0f);
+  glClear(GL_COLOR_BUFFER_BIT);
+
+  // glDrawArrays(GL_TRIANGLES,0,3);
+  glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
   glBindVertexArray(0);
   glUseProgram(0);
-
-  // static int flashs=0;
-  // if(flashs>120)
-  //   glClearColor(0.2f,0.1f,0.3f,1.0f);
-  // else
-  //   glClearColor(1.f,1.f,1.f,1.f);
-  // glClear(GL_COLOR_BUFFER_BIT);
-  // if(++flashs>=250)flashs=0;
-
-  // glBindFramebuffer(GL_FRAMEBUFFER,0);
 }
