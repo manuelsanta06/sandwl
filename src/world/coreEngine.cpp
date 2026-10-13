@@ -1,43 +1,8 @@
-#include <iostream>
-#include <fstream>
-#include <sstream>
-#include <string>
+#include "easyShaders.hpp"
 #include "coreEngine.hpp"
-#include <GL/gl.h>
+
 #include <GLES3/gl3.h>
-
-std::string readShaderFile(const std::string& filePath){
-  std::ifstream file(filePath);
-  if(!file.is_open()){
-    std::cerr<<"[3DEngine] Error: no such shader" << filePath << std::endl;
-    return "";
-  }
-
-  std::stringstream buffer;
-  buffer<<file.rdbuf();
-  file.close();
-
-  return buffer.str();
-}
-
-bool loadShader(unsigned int &id,int type,const std::string& filePath){
-  id=glCreateShader(type);
-  std::string rawCode=readShaderFile(filePath);
-  const char* castedCode=rawCode.c_str();
-
-  glShaderSource(id,1,&castedCode,NULL);
-  glCompileShader(id);
-
-  int  success;
-  char infoLog[512];
-  glGetShaderiv(id,GL_COMPILE_STATUS,&success);
-  if(!success){
-    glGetShaderInfoLog(id,512,NULL,infoLog);
-    std::cerr<<"[3Dengine] ERROR::SHADER::COMPILATION_FAILED file"<<filePath<<"\n"<<infoLog<<std::endl;
-    return false;
-  }
-  return true;
-}
+#include <GL/gl.h>
 
 CoreEngine::CoreEngine(int width,int height,EGLDisplay display,EGLContext context)
   :width(width),height(height),eglDisplay(display),eglContext(context)
@@ -74,18 +39,7 @@ void CoreEngine::init(){
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER,0);
 
-  unsigned int Sfragment;
-  unsigned int Svertex;
-  loadShader(Svertex,GL_VERTEX_SHADER,"src/world/shaders/basic.vert");
-  loadShader(Sfragment,GL_FRAGMENT_SHADER,"src/world/shaders/basic.frag");
-
-  shaderProgram=glCreateProgram();
-  glAttachShader(shaderProgram,Svertex);
-  glAttachShader(shaderProgram,Sfragment);
-  glLinkProgram(shaderProgram);
-
-  glDeleteShader(Svertex);
-  glDeleteShader(Sfragment);
+  mainProgram=EasyProgram("src/world/shaders/basic.vert","src/world/shaders/basic.frag");
 }
 
 CoreEngine::~CoreEngine(){}
@@ -97,7 +51,7 @@ void CoreEngine::update(float deltaTime){
   }
   glViewport(0,0,width,height);
 
-  glUseProgram(shaderProgram);
+  mainProgram.use();
   glBindVertexArray(VAO);
 
   glClearColor(0.2f, 0.1f, 0.3f, 1.0f);

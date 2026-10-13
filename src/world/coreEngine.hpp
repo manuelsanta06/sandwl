@@ -1,5 +1,7 @@
 #pragma once
 
+#include "easyShaders.hpp"
+
 #include <EGL/egl.h>
 #include <GLES3/gl3.h>
 
@@ -17,7 +19,7 @@ private:
   int width;
   int height;
 
-  unsigned int shaderProgram;
+  EasyProgram mainProgram;
 
   unsigned int VAO;
   unsigned int VBO;
