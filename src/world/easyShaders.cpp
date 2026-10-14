@@ -40,7 +40,8 @@ bool loadShader(unsigned int &id,int type,const std::string& filePath){
 }
 
 
-EasyProgram::EasyProgram(const char* vertexPath,const char* fragmentPath){
+EasyProgram::EasyProgram(const char* vertexPath,const char* fragmentPath){load(vertexPath,fragmentPath);}
+void EasyProgram::load(const char* vertexPath,const char* fragmentPath){
   unsigned int Sfragment;
   unsigned int Svertex;
   loadShader(Svertex,GL_VERTEX_SHADER,vertexPath);
@@ -54,6 +55,11 @@ EasyProgram::EasyProgram(const char* vertexPath,const char* fragmentPath){
   glDeleteShader(Svertex);
   glDeleteShader(Sfragment);
 }
+
+EasyProgram::~EasyProgram(){
+  glDeleteProgram(ID);
+}
+
 
 void EasyProgram::use(){
   glUseProgram(ID);

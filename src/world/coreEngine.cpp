@@ -3,6 +3,9 @@
 
 #include <GLES3/gl3.h>
 #include <GL/gl.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
 
 CoreEngine::CoreEngine(int width,int height,EGLDisplay display,EGLContext context)
   :width(width),height(height),eglDisplay(display),eglContext(context)
@@ -39,7 +42,7 @@ void CoreEngine::init(){
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER,0);
 
-  mainProgram=EasyProgram("src/world/shaders/basic.vert","src/world/shaders/basic.frag");
+  mainProgram.load("src/world/shaders/basic.vert","src/world/shaders/basic.frag");
 }
 
 CoreEngine::~CoreEngine(){}
@@ -53,6 +56,14 @@ void CoreEngine::update(float deltaTime){
 
   mainProgram.use();
   glBindVertexArray(VAO);
+
+  static float degs=0;
+  degs+=90*deltaTime;
+  if(degs>=360)degs-=360;
+  glm::mat4 trans=glm::mat4(1.0f);
+  trans=glm::rotate(trans,glm::radians(degs),glm::vec3(.0,0.0,1.0));
+  unsigned int transformLoc=glGetUniformLocation(mainProgram.ID,"transform");
+  glUniformMatrix4fv(transformLoc,1,GL_FALSE,glm::value_ptr(trans));
 
   glClearColor(0.2f, 0.1f, 0.3f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);

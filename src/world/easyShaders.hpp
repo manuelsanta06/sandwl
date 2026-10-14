@@ -13,7 +13,10 @@ public:
   unsigned int ID;
 
   EasyProgram()=default;
+  ~EasyProgram();
   EasyProgram(const char* vertexPath,const char* fragmentPath);
+
+  void load(const char* vertexPath,const char* fragmentPath);
 
   void use();
 
