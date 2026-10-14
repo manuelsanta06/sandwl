@@ -61,9 +61,8 @@ void CoreEngine::update(float deltaTime){
   degs+=90*deltaTime;
   if(degs>=360)degs-=360;
   glm::mat4 trans=glm::mat4(1.0f);
-  trans=glm::rotate(trans,glm::radians(degs),glm::vec3(.0,0.0,1.0));
-  unsigned int transformLoc=glGetUniformLocation(mainProgram.ID,"transform");
-  glUniformMatrix4fv(transformLoc,1,GL_FALSE,glm::value_ptr(trans));
+  trans=glm::rotate(trans,glm::radians(degs),glm::vec3(1.0,1.0,1.0));
+  mainProgram.setUniform("transform",trans);
 
   glClearColor(0.2f, 0.1f, 0.3f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT);
