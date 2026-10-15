@@ -17,3 +17,9 @@ void engine_update(Engine3D* engine_ptr,float delta_time){
   CoreEngine* engine=reinterpret_cast<CoreEngine*>(engine_ptr);
   engine->update(delta_time);
 }
+
+void reload_shaders(Engine3D* engine_ptr){
+  if(!engine_ptr)return;
+  CoreEngine* engine=reinterpret_cast<CoreEngine*>(engine_ptr);
+  engine->relaodShaders();
+}

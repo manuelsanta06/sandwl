@@ -17,7 +17,7 @@ void engine_destroy(Engine3D* engine);
 
 void engine_update(Engine3D* engine,float delta_time);
 
-bool engineRenderFrame(Engine3D* engine,uint32_t* pixel_buffer,int stride);
+void reload_shaders(Engine3D* engine);
 
 #ifdef __cplusplus
 }
