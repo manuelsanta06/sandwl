@@ -5,9 +5,11 @@
 #include <wlr/xwayland.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <time.h>
 #include "world/engineApi.h"
 
 struct sandwl_lua;
+struct sandwl_world_output;
 
 
 enum sandwl_cursor_mode{
@@ -20,6 +22,8 @@ struct sandwl_server{
   struct sandwl_lua                       *lua;
   struct wlr_session                      *session;
   Engine3D                                *engine;
+  struct timespec                         engine_frame_time;
+  bool                                    engine_has_frame_time;
 
   struct wl_display                       *wl_display;
   struct wlr_backend                      *backend;
@@ -107,8 +111,7 @@ struct sandwl_output{
   struct sandwl_server    *server;
   struct wlr_output       *wlr_output;
 
-  struct wlr_buffer       *engine_buffer;
-  struct wlr_scene_buffer *engine_node;
+  struct sandwl_world_output *world;
 
   struct wlr_box          usable_area;
   struct wl_list          layers[4];

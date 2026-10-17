@@ -1,25 +1,52 @@
 #include "engineApi.h"
 #include "coreEngine.hpp"
+#include "renderContext.hpp"
 
-Engine3D* engine_create(int width,int height,EGLDisplay display,EGLContext context){
-  CoreEngine* engine=new CoreEngine(width,height,display,context);
-  return reinterpret_cast<Engine3D*>(engine);
+#include <cstdio>
+#include <iostream>
+#include <new>
+
+struct Engine3D{
+  EGLDisplay display;
+  EGLContext context;
+  CoreEngine core;
+
+  Engine3D(EGLDisplay display,EGLContext context)
+    :display(display),context(context),core(0,0){}
+};
+
+Engine3D* engine_create(EGLDisplay display,EGLContext context){
+  EngineContext current(display,context);
+  if(!current)return nullptr;
+  const char *version=reinterpret_cast<const char*>(glGetString(GL_VERSION));
+  int major=0,minor=0;
+  if(!version||std::sscanf(version,"OpenGL ES %d.%d",&major,&minor)!=2||
+      major<3||(major==3&&minor<2)){
+    std::cerr<<"[3DEngine] OpenGL ES 3.2 is required by the current shaders\n";
+    return nullptr;
+  }
+  return new(std::nothrow) Engine3D(display,context);
 }
 
-void engine_destroy(Engine3D* engine_ptr){
-  if(!engine_ptr)return;
-  CoreEngine* engine=reinterpret_cast<CoreEngine*>(engine_ptr);
+void engine_destroy(Engine3D* engine){
+  if(!engine)return;
+  EngineContext current(engine->display,engine->context);
+  if(!current)return;
   delete engine;
 }
 
-void engine_update(Engine3D* engine_ptr,float delta_time){
-  if(!engine_ptr)return;
-  CoreEngine* engine=reinterpret_cast<CoreEngine*>(engine_ptr);
-  engine->update(delta_time);
+bool engine_render(Engine3D* engine,uint32_t framebuffer,int width,int height,float delta_time){
+  if(!engine||!framebuffer||width<=0||height<=0)return false;
+  EngineContext current(engine->display,engine->context);
+  if(!current)return false;
+  EngineGLState state;
+  return engine->core.render(framebuffer,width,height,delta_time);
 }
 
-void reload_shaders(Engine3D* engine_ptr){
-  if(!engine_ptr)return;
-  CoreEngine* engine=reinterpret_cast<CoreEngine*>(engine_ptr);
-  engine->relaodShaders();
+void reload_shaders(Engine3D* engine){
+  if(!engine)return;
+  EngineContext current(engine->display,engine->context);
+  if(!current)return;
+  EngineGLState state;
+  engine->core.relaodShaders();
 }

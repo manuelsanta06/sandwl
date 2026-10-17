@@ -12,10 +12,12 @@ extern "C" {
 
 typedef struct Engine3D Engine3D;
 
-Engine3D* engine_create(int width,int height,EGLDisplay display,EGLContext context);
+Engine3D* engine_create(EGLDisplay display,EGLContext context);
 void engine_destroy(Engine3D* engine);
 
-void engine_update(Engine3D* engine,float delta_time);
+// The FBO must belong to the engine's EGL context. delta_time is in seconds.
+// Call outside wlroots render passes; EGL and the modified GL state are restored.
+bool engine_render(Engine3D* engine,uint32_t framebuffer,int width,int height,float delta_time);
 
 void reload_shaders(Engine3D* engine);
 

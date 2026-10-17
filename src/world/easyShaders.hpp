@@ -11,7 +11,7 @@ bool loadShader(unsigned int &id,int type,const std::string& filePath);
 
 class EasyProgram{
 public:
-  unsigned int ID;
+  unsigned int ID=0;
 
   EasyProgram()=default;
   ~EasyProgram();

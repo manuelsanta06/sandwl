@@ -3,20 +3,20 @@
 #include <stdlib.h>
 
 #include <wayland-util.h>
-#include <drm_fourcc.h>
 
 #include <wlr/types/wlr_output_layout.h>
 #include <wlr/types/wlr_output.h>
-#include <wlr/render/allocator.h>
 #include <wlr/types/wlr_scene.h>
 
 #include "types.h"
 #include "outputs.h"
+#include "world/wlrRenderer.h"
 
 void output_destroy(struct wl_listener *listener,void *data){
   (void)data;
   struct sandwl_output *output=wl_container_of(listener,output,destroy);
 
+  sandwl_world_output_destroy(output->world);
   wl_list_remove(&output->frame.link);
   wl_list_remove(&output->request_state.link);
   wl_list_remove(&output->destroy.link);
@@ -41,15 +41,24 @@ void output_frame(struct wl_listener *listener,void *data){
 
   struct wlr_scene_output *scene_output=wlr_scene_get_scene_output(scene,output->wlr_output);
 
-  if(output->engine_buffer){
-    struct wlr_render_pass *pass=wlr_renderer_begin_buffer_pass(
-      output->server->renderer,output->engine_buffer,NULL);
-
-    if(pass){
-      engine_update(output->server->engine,0.016f);//TODO: real deltatime. now fixed for 60FPS aprox
-      wlr_render_pass_submit(pass);
-      wlr_scene_node_set_enabled(&output->engine_node->node,false);
-      wlr_scene_node_set_enabled(&output->engine_node->node,true);
+  bool animated=false;
+  if(output->world){
+    struct timespec frame_time;
+    clock_gettime(CLOCK_MONOTONIC,&frame_time);
+    struct sandwl_server *server=output->server;
+    float delta_time=0;
+    if(server->engine_has_frame_time){
+      delta_time=(float)((double)(frame_time.tv_sec-server->engine_frame_time.tv_sec)+
+        (double)(frame_time.tv_nsec-server->engine_frame_time.tv_nsec)/1000000000.0);
+    }
+    int width,height;
+    wlr_output_transformed_resolution(output->wlr_output,&width,&height);
+    struct wlr_box box;
+    wlr_output_layout_get_box(server->output_layout,output->wlr_output,&box);
+    animated=sandwl_world_output_render(output->world,width,height,&box,delta_time);
+    if(animated){
+      server->engine_frame_time=frame_time;
+      server->engine_has_frame_time=true;
     }
   }
 
@@ -60,8 +69,7 @@ void output_frame(struct wl_listener *listener,void *data){
   clock_gettime(CLOCK_MONOTONIC,&now);
   wlr_scene_output_send_frame_done(scene_output,&now);
 
-  //forces wayland to render even if no window has changed
-  wlr_output_schedule_frame(output->wlr_output);
+  if(animated)wlr_output_schedule_frame(output->wlr_output);
 }
 
 void server_new_output(struct wl_listener *listener,void *data){
@@ -100,21 +108,8 @@ void server_new_output(struct wl_listener *listener,void *data){
 
   wl_list_insert(&server->outputs,&output->link);
 
-  uint64_t modifiers[]={DRM_FORMAT_MOD_LINEAR};
-
-  const struct wlr_drm_format form={
-    .format=DRM_FORMAT_ARGB8888,
-    .len=1,
-    .capacity=1,
-    .modifiers=modifiers
-  };
-
-  output->engine_buffer=wlr_allocator_create_buffer(server->allocator,wlr_output->width,wlr_output->height,&form);
-
-  if(output->engine_buffer){
-    output->engine_node=wlr_scene_buffer_create(server->scene_background,output->engine_buffer);
-    wlr_scene_node_set_position(&output->engine_node->node,0,0);
-  }
+  output->world=sandwl_world_output_create(server->engine,server->renderer,
+    server->allocator,server->scene_background);
 
   //adds the output to the layout
   //'wlr_output_layout_add_auto' arranges outputs from left to right

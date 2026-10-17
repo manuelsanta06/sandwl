@@ -43,6 +43,7 @@
 #include "types.h"
 #include "seats.h"
 #include "config/luaConfig.h"
+#include "world/wlrRenderer.h"
 
 
 void server_new_input(struct wl_listener *listener,void *data){
@@ -153,12 +154,12 @@ int main(int argc, char *argv[]){
     wlr_log(WLR_ERROR,"failed to create wlr_renderer");return 1;
   }
 
-  struct wlr_egl *wlr_egl = wlr_gles2_renderer_get_egl(server.renderer);
-  if(wlr_egl){
-    server.engine=engine_create(800,600,wlr_egl_get_display(wlr_egl),wlr_egl_get_context(wlr_egl));
+  if(wlr_renderer_is_gles2(server.renderer)){
+    struct wlr_egl *wlr_egl=wlr_gles2_renderer_get_egl(server.renderer);
+    server.engine=engine_create(wlr_egl_get_display(wlr_egl),wlr_egl_get_context(wlr_egl));
 
     if(server.engine)
-      wlr_log(WLR_INFO,"3D engine running with openGl`s EGL/GLES2");
+      wlr_log(WLR_INFO,"3D engine running with EGL/OpenGL ES");
   }else{
     wlr_log(WLR_ERROR,"wlroots`s renderer is not using EGL/GLES2. 3D engine disabled.");
   }
@@ -330,6 +331,12 @@ int main(int argc, char *argv[]){
   wl_display_destroy_clients(server.wl_display);
   server_remove_listeners(&server);
 
+  struct sandwl_output *output;
+  wl_list_for_each(output,&server.outputs,link){
+    sandwl_world_output_destroy(output->world);
+    output->world=NULL;
+  }
+  engine_destroy(server.engine);
   wlr_scene_node_destroy(&server.scene->tree.node);
   sandwl_lua_destroy(server.lua);
   wlr_xcursor_manager_destroy(server.cursor_mgr);
