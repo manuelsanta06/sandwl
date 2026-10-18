@@ -41,6 +41,13 @@ BINDIR = $(PREFIX)/bin
 
 all: $(TARGET)
 
+build/tests/cameraMode: tests/cameraMode.c build/cameraMode.o build/keybindings.o build/serverKeyboard.o build/config/luaBindings.o build/config/luaConfig.o
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -DWLR_USE_UNSTABLE $^ -o $@ $(LDFLAGS) $(LIBS)
+
+test: build/tests/cameraMode
+	./build/tests/cameraMode
+
 build:
 	@mkdir -p build
 
@@ -72,4 +79,4 @@ uninstall:
 
 -include $(DEPS)
 
-.PHONY: all clean install uninstall build
+.PHONY: all clean install uninstall build test

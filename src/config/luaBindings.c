@@ -17,9 +17,66 @@ static int lua_sand_bind(lua_State *state){
   luaL_checktype(state,2,LUA_TFUNCTION);
   struct sandwl_server *server=lua_touserdata(state,lua_upvalueindex(1));
 
-  if(!server||!sandwl_keybinding_add(server,state,keys,2))
+  if(!server||!sandwl_keybinding_add(&server->keybindings,state,keys,2))
     return luaL_error(state,"unable to register keybinding '%s'",keys);
 
+  return 0;
+}
+
+static int lua_sand_camera_mode_bind(lua_State *state){
+  const char *keys=luaL_checkstring(state,1);
+  luaL_checktype(state,2,LUA_TFUNCTION);
+  struct sandwl_server *server=lua_touserdata(state,lua_upvalueindex(1));
+
+  if(!sandwl_keybinding_add(&server->camera_mode.bindings,state,keys,2))
+    return luaL_error(state,"unable to register camera binding '%s'",keys);
+
+  return 0;
+}
+
+static int lua_sand_camera_mode_toggle(lua_State *state){
+  struct sandwl_server *server=lua_touserdata(state,lua_upvalueindex(1));
+  sandwl_camera_mode_set_enabled(server,state,!server->camera_mode.enabled);
+  return 0;
+}
+
+static int lua_sand_camera_mode_enable(lua_State *state){
+  struct sandwl_server *server=lua_touserdata(state,lua_upvalueindex(1));
+  sandwl_camera_mode_set_enabled(server,state,true);
+  return 0;
+}
+
+static int lua_sand_camera_mode_disable(lua_State *state){
+  struct sandwl_server *server=lua_touserdata(state,lua_upvalueindex(1));
+  sandwl_camera_mode_set_enabled(server,state,false);
+  return 0;
+}
+
+static int lua_sand_camera_mode_forward(lua_State *state){
+  luaL_checktype(state,1,LUA_TBOOLEAN);
+  struct sandwl_server *server=lua_touserdata(state,lua_upvalueindex(1));
+  server->camera_mode.forward=server->camera_mode.enabled&&lua_toboolean(state,1);
+  return 0;
+}
+
+static int lua_sand_camera_mode_backward(lua_State *state){
+  luaL_checktype(state,1,LUA_TBOOLEAN);
+  struct sandwl_server *server=lua_touserdata(state,lua_upvalueindex(1));
+  server->camera_mode.backward=server->camera_mode.enabled&&lua_toboolean(state,1);
+  return 0;
+}
+
+static int lua_sand_camera_mode_left(lua_State *state){
+  luaL_checktype(state,1,LUA_TBOOLEAN);
+  struct sandwl_server *server=lua_touserdata(state,lua_upvalueindex(1));
+  server->camera_mode.left=server->camera_mode.enabled&&lua_toboolean(state,1);
+  return 0;
+}
+
+static int lua_sand_camera_mode_right(lua_State *state){
+  luaL_checktype(state,1,LUA_TBOOLEAN);
+  struct sandwl_server *server=lua_touserdata(state,lua_upvalueindex(1));
+  server->camera_mode.right=server->camera_mode.enabled&&lua_toboolean(state,1);
   return 0;
 }
 
@@ -91,6 +148,18 @@ static const luaL_Reg camera_methods[]={
   {NULL,NULL}
 };
 
+static const luaL_Reg camera_mode_functions[]={
+  {"bind"     , lua_sand_camera_mode_bind},
+  {"toggle"   , lua_sand_camera_mode_toggle},
+  {"enable"   , lua_sand_camera_mode_enable},
+  {"disable"  , lua_sand_camera_mode_disable},
+  {"forward"  , lua_sand_camera_mode_forward},
+  {"backward" , lua_sand_camera_mode_backward},
+  {"left"     , lua_sand_camera_mode_left},
+  {"right"    , lua_sand_camera_mode_right},
+  {NULL,NULL}
+};
+
 static int lua_sand_cameras_current(lua_State *state){
   struct sandwl_lua_camera *camera=lua_newuserdatauv(state,sizeof(*camera),0);
   camera->placeholder=0;
@@ -115,5 +184,9 @@ void sandwl_lua_register_api(lua_State *state,struct sandwl_server *server){
   luaL_setfuncs(state,sand_functions,1);
   luaL_newlib(state,cameras_functions);
   lua_setfield(state,-2,"cameras");
+  luaL_newlibtable(state,camera_mode_functions);
+  lua_pushlightuserdata(state,server);
+  luaL_setfuncs(state,camera_mode_functions,1);
+  lua_setfield(state,-2,"cameraMode");
   lua_setglobal(state,"sand");
 }

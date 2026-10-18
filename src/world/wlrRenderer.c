@@ -76,7 +76,7 @@ void sandwl_world_output_destroy(struct sandwl_world_output *output){
 }
 
 bool sandwl_world_output_render(struct sandwl_world_output *output,int width,int height,
-    const struct wlr_box *box,float delta_time){
+    const struct wlr_box *box,float delta_time,const struct EngineInput *input){
   if(!output||width<=0||height<=0||box->width<=0||box->height<=0)return false;
   wlr_scene_node_set_position(&output->node->node,box->x,box->y);
   wlr_scene_buffer_set_dest_size(output->node,box->width,box->height);
@@ -102,7 +102,7 @@ bool sandwl_world_output_render(struct sandwl_world_output *output,int width,int
     return false;
   }
   GLuint framebuffer=wlr_gles2_renderer_get_buffer_fbo(output->renderer,buffer);
-  bool rendered=framebuffer&&engine_render(output->engine,framebuffer,width,height,delta_time);
+  bool rendered=framebuffer&&engine_render(output->engine,framebuffer,width,height,delta_time,input);
   if(rendered){
     wlr_scene_buffer_set_buffer_with_damage(output->node,buffer,NULL);
   }else{

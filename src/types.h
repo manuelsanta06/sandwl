@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <time.h>
 #include "world/engineApi.h"
+#include "cameraMode.h"
 
 struct sandwl_lua;
 struct sandwl_world_output;
@@ -58,6 +59,7 @@ struct sandwl_server{
   struct wlr_seat                         *seat;
   struct wl_listener                      new_input;
   struct wl_list                          keybindings;
+  struct sandwl_camera_mode                camera_mode;
   struct wl_listener                      request_cursor;
   struct wl_listener                      pointer_focus_change;
   struct wl_listener                      request_set_selection;
@@ -190,6 +192,7 @@ struct sandwl_popup{
 
 struct sandwl_keyboard{
   struct wl_list          link;
+  struct wl_list          camera_keys;
   struct sandwl_server    *server;
   struct wlr_keyboard     *wlr_keyboard;
 

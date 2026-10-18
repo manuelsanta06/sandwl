@@ -18,11 +18,14 @@ struct sandwl_keybinding{
   int lua_callback_ref;
 };
 
-bool sandwl_keybinding_add(struct sandwl_server *server,lua_State *state,
+bool sandwl_keybinding_add(struct wl_list *bindings,lua_State *state,
   const char *keys,int callback_index);
+
+bool sandwl_keybinding_matches(struct sandwl_keybinding *binding,
+  const xkb_keysym_t *syms,size_t nsyms,uint32_t modifiers);
 
 bool sandwl_keybindings_handle(struct sandwl_server *server,lua_State *state,
   const xkb_keysym_t *syms,size_t nsyms,uint32_t modifiers,
   enum wl_keyboard_key_state key_state);
 
-void sandwl_keybindings_destroy(struct sandwl_server *server,lua_State *state);
+void sandwl_keybindings_destroy(struct wl_list *bindings,lua_State *state);

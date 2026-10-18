@@ -56,8 +56,8 @@ static bool parse_keybinding(const char *keys,uint32_t *modifiers,xkb_keysym_t *
   }
 }
 
-bool sandwl_keybinding_add(struct sandwl_server *server,lua_State *state,const char *keys,int callback_index){
-  if(!server||!state)
+bool sandwl_keybinding_add(struct wl_list *bindings,lua_State *state,const char *keys,int callback_index){
+  if(!bindings||!state)
     return false;
 
   uint32_t modifiers=0;
@@ -75,8 +75,20 @@ bool sandwl_keybinding_add(struct sandwl_server *server,lua_State *state,const c
 
   lua_pushvalue(state,callback_index);
   binding->lua_callback_ref=luaL_ref(state,LUA_REGISTRYINDEX);
-  wl_list_insert(&server->keybindings,&binding->link);
+  wl_list_insert(bindings,&binding->link);
   return true;
+}
+
+bool sandwl_keybinding_matches(struct sandwl_keybinding *binding,
+    const xkb_keysym_t *syms,size_t nsyms,uint32_t modifiers){
+  if(binding->modifiers!=modifiers)
+    return false;
+
+  for(size_t i=0;i<nsyms;i++){
+    if(syms[i]==binding->key)
+      return true;
+  }
+  return false;
 }
 
 bool sandwl_keybindings_handle(struct sandwl_server *server,lua_State *state,
@@ -88,17 +100,7 @@ bool sandwl_keybindings_handle(struct sandwl_server *server,lua_State *state,
   bool handled=false;
   struct sandwl_keybinding *binding,*tmp;
   wl_list_for_each_safe(binding,tmp,&server->keybindings,link){
-    if(binding->state!=key_state||binding->modifiers!=modifiers)
-      continue;
-
-    bool key_matches=false;
-    for(size_t i=0;i<nsyms;i++){
-      if(syms[i]==binding->key){
-        key_matches=true;
-        break;
-      }
-    }
-    if(!key_matches)
+    if(binding->state!=key_state||!sandwl_keybinding_matches(binding,syms,nsyms,modifiers))
       continue;
 
     handled=true;
@@ -114,12 +116,12 @@ bool sandwl_keybindings_handle(struct sandwl_server *server,lua_State *state,
   return handled;
 }
 
-void sandwl_keybindings_destroy(struct sandwl_server *server,lua_State *state){
-  if(!server)
+void sandwl_keybindings_destroy(struct wl_list *bindings,lua_State *state){
+  if(!bindings)
     return;
 
   struct sandwl_keybinding *binding,*tmp;
-  wl_list_for_each_safe(binding,tmp,&server->keybindings,link){
+  wl_list_for_each_safe(binding,tmp,bindings,link){
     if(state)
       luaL_unref(state,LUA_REGISTRYINDEX,binding->lua_callback_ref);
     wl_list_remove(&binding->link);

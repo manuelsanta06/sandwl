@@ -262,6 +262,7 @@ int main(int argc, char *argv[]){
   //and a listener for new devices
   wl_list_init(&server.keyboards);
   wl_list_init(&server.keybindings);
+  wl_list_init(&server.camera_mode.bindings);
   server.new_input.notify=server_new_input;
   wl_signal_add(&server.backend->events.new_input,&server.new_input);
   server.seat=wlr_seat_create(server.wl_display,"seat0");

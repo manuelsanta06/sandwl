@@ -55,7 +55,11 @@ void output_frame(struct wl_listener *listener,void *data){
     wlr_output_transformed_resolution(output->wlr_output,&width,&height);
     struct wlr_box box;
     wlr_output_layout_get_box(server->output_layout,output->wlr_output,&box);
-    animated=sandwl_world_output_render(output->world,width,height,&box,delta_time);
+    struct EngineInput input={
+      .forward=server->camera_mode.forward-server->camera_mode.backward,
+      .right=server->camera_mode.right-server->camera_mode.left,
+    };
+    animated=sandwl_world_output_render(output->world,width,height,&box,delta_time,&input);
     if(animated){
       server->engine_frame_time=frame_time;
       server->engine_has_frame_time=true;

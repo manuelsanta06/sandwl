@@ -35,12 +35,13 @@ void engine_destroy(Engine3D* engine){
   delete engine;
 }
 
-bool engine_render(Engine3D* engine,uint32_t framebuffer,int width,int height,float delta_time){
+bool engine_render(Engine3D* engine,uint32_t framebuffer,int width,int height,
+    float delta_time,const struct EngineInput *input){
   if(!engine||!framebuffer||width<=0||height<=0)return false;
   EngineContext current(engine->display,engine->context);
   if(!current)return false;
   EngineGLState state;
-  return engine->core.render(framebuffer,width,height,delta_time);
+  return engine->core.render(framebuffer,width,height,delta_time,input);
 }
 
 void reload_shaders(Engine3D* engine){

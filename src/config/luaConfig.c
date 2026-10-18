@@ -126,7 +126,9 @@ enum sandwl_lua_config_result sandwl_lua_load_config(struct sandwl_lua *lua, con
 void sandwl_lua_destroy(struct sandwl_lua *lua){
   if(!lua)
     return;
-  sandwl_keybindings_destroy(lua->server,lua->state);
+  sandwl_camera_mode_destroy(lua->server,lua->state);
+  sandwl_keybindings_destroy(&lua->server->keybindings,lua->state);
+  lua->server->lua=NULL;
   if(lua->state)
     lua_close(lua->state);
   free(lua);

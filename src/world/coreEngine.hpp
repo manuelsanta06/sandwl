@@ -1,6 +1,7 @@
 #pragma once
 
 #include "easyShaders.hpp"
+#include "engineApi.h"
 
 #include <GLES3/gl3.h>
 
@@ -11,7 +12,7 @@ public:
 
   void init();
 
-  bool render(unsigned int framebuffer,int width,int height,float deltaTime);
+  bool render(unsigned int framebuffer,int width,int height,float deltaTime,const EngineInput *input);
 
   void relaodShaders();
 
