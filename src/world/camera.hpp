@@ -2,6 +2,8 @@
 
 #include "world/engineApi.h"
 
+#include <glm/common.hpp>
+#include <glm/ext/vector_float3.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -15,6 +17,7 @@ const float ZOOM        = 45.0f;
 class Camera{
 public:
   glm::vec3 m_position;
+private:
   glm::vec3 m_front;
   glm::vec3 m_up;
   glm::vec3 m_right;
@@ -28,6 +31,7 @@ public:
   float m_mouseSensitivity;
   float m_zoom;
 
+public:
   Camera(glm::vec3 position,glm::vec3 up=glm::vec3(0.0f,1.0f,0.0f),float yaw=YAW,float pitch=PITCH)
     :m_front(glm::vec3(0.0f,0.0f,-1.0f)),m_movementSpeed(SPEED),m_mouseSensitivity(SENSITIVITY),m_zoom(ZOOM)
   {
@@ -48,13 +52,17 @@ public:
     updateCameraVectors();
   }
 
-  glm::mat4 GetViewMatrix(){
+  glm::mat4 GetViewMatrix()const{
     return glm::lookAt(m_position,m_position+m_front,m_up);
   }
 
   void processInput(const EngineInput *input,float deltaTime){
-    m_position+=m_front*m_movementSpeed*input->forward*deltaTime;
-    m_position+=m_right*m_movementSpeed*input->right*deltaTime;
+    glm::vec3 walkMovement;
+    float length=walkMovement.length();
+    if(length>1)walkMovement/=length;
+    walkMovement=m_front*input->forward+m_right*input->right;
+    walkMovement*=m_movementSpeed*deltaTime;
+    m_position+=walkMovement;
   }
 
 private:

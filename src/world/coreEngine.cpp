@@ -56,7 +56,6 @@ CoreEngine::~CoreEngine(){
 }
 
 bool CoreEngine::render(unsigned int framebuffer,int targetWidth,int targetHeight,float deltaTime,const EngineInput *input){
-  (void)input;
   if(!framebuffer||targetWidth<=0||targetHeight<=0)return false;
   glBindFramebuffer(GL_FRAMEBUFFER,framebuffer);
 
