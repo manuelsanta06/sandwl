@@ -1,15 +1,18 @@
 #include "easyShaders.hpp"
 #include "coreEngine.hpp"
 #include "inputData.hpp"
+#include "engineApi.h"
+#include "camera.hpp"
 
 #include <GLES3/gl3.h>
+#include <glm/ext/vector_float3.hpp>
 #include <iostream>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
 CoreEngine::CoreEngine(int width,int height)
-  :width(width),height(height)
+  :mainCamera(Camera(glm::vec3(0,0,3))),width(width),height(height)
 {}
 
 void CoreEngine::relaodShaders(){
@@ -52,8 +55,7 @@ CoreEngine::~CoreEngine(){
   glDeleteBuffers(1,&EBO);
 }
 
-bool CoreEngine::render(unsigned int framebuffer,int targetWidth,int targetHeight,
-    float deltaTime,const EngineInput *input){
+bool CoreEngine::render(unsigned int framebuffer,int targetWidth,int targetHeight,float deltaTime,const EngineInput *input){
   (void)input;
   if(!framebuffer||targetWidth<=0||targetHeight<=0)return false;
   glBindFramebuffer(GL_FRAMEBUFFER,framebuffer);
@@ -81,18 +83,17 @@ bool CoreEngine::render(unsigned int framebuffer,int targetWidth,int targetHeigh
     return false;
   }
 
-  renderScene(deltaTime);
+  renderScene(deltaTime,input);
   glFramebufferRenderbuffer(GL_FRAMEBUFFER,GL_DEPTH_ATTACHMENT,GL_RENDERBUFFER,0);
   glFlush();
   return true;
 }
 
-void CoreEngine::renderScene(float deltaTime){
-  static float degsCubes=0,degsCam=0;
+void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
+  mainCamera.processInput(input,deltaTime);
+  static float degsCubes=0;
   degsCubes+=45*deltaTime;
   if(degsCubes>=360)degsCubes-=360;
-  degsCam+=1*deltaTime;
-  if(degsCam>=360)degsCam-=360;
   //set the enviroment up
   mainProgram.use();
   glBindVertexArray(VAO);
@@ -105,16 +106,11 @@ void CoreEngine::renderScene(float deltaTime){
   //shaders uniforms
   model=glm::rotate(glm::mat4(1.0f),glm::radians(-55.0f),glm::vec3(1.0f,0.0f,0.0f));
 
-  glm::vec3 cameraPos   = glm::vec3(0.0f, 0.0f,  3.0f);
-  glm::vec3 cameraFront = glm::vec3(0.0f, 0.0f, -1.0f);
-  glm::vec3 cameraUp    = glm::vec3(0.0f, 1.0f,  0.0f);
-  view =glm::lookAt(cameraPos, cameraPos+cameraFront, cameraUp);
-
   float degFov=45.0f;
   proj =glm::perspective(glm::radians(degFov),(float)width/(float)height,0.1f,100.0f);
   proj[1][1]*=-1;
 
-  mainProgram.setUniform("view",view);
+  mainProgram.setUniform("view",mainCamera.GetViewMatrix());
   mainProgram.setUniform("projection",proj);
 
   //draws

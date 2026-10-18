@@ -2,6 +2,7 @@
 
 #include "easyShaders.hpp"
 #include "engineApi.h"
+#include "camera.hpp"
 
 #include <GLES3/gl3.h>
 
@@ -17,7 +18,9 @@ public:
   void relaodShaders();
 
 private:
-  void renderScene(float deltaTime);
+  void renderScene(float deltaTime,const EngineInput *input);
+
+  Camera mainCamera;
 
   bool isInitialized=false;
   unsigned int depthRBO;
@@ -27,7 +30,6 @@ private:
   EasyProgram mainProgram;
     
   glm::mat4 model=glm::mat4(1.0f);
-  glm::mat4 view =glm::mat4(1.0f);
   glm::mat4 proj =0;
 
   unsigned int VAO;
