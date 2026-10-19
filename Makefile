@@ -45,8 +45,13 @@ build/tests/cameraMode: tests/cameraMode.c build/cameraMode.o build/keybindings.
 	@mkdir -p $(dir $@)
 	$(CC) $(CFLAGS) -DWLR_USE_UNSTABLE $^ -o $@ $(LDFLAGS) $(LIBS)
 
-test: build/tests/cameraMode
+build/tests/cursorMotion: tests/cursorMotion.c build/cameraMode.o build/keybindings.o build/serverCursor.o build/processCursor.o build/utilies.o
+	@mkdir -p $(dir $@)
+	$(CC) $(CFLAGS) -DWLR_USE_UNSTABLE $^ -o $@ $(LDFLAGS) $(LIBS)
+
+test: build/tests/cameraMode build/tests/cursorMotion
 	./build/tests/cameraMode
+	./build/tests/cursorMotion
 
 build:
 	@mkdir -p build

@@ -4,6 +4,7 @@
 
 #include <glm/common.hpp>
 #include <glm/ext/vector_float3.hpp>
+#include <glm/geometric.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -11,7 +12,6 @@
 const float YAW         =-90.0f;
 const float PITCH       = 0.0f;
 const float SPEED       = 2.5f;
-const float SENSITIVITY = 0.1f;
 const float ZOOM        = 45.0f;
 
 class Camera{
@@ -28,12 +28,11 @@ private:
   //TODO: roll?
   //camera options
   float m_movementSpeed;
-  float m_mouseSensitivity;
   float m_zoom;
 
 public:
   Camera(glm::vec3 position,glm::vec3 up=glm::vec3(0.0f,1.0f,0.0f),float yaw=YAW,float pitch=PITCH)
-    :m_front(glm::vec3(0.0f,0.0f,-1.0f)),m_movementSpeed(SPEED),m_mouseSensitivity(SENSITIVITY),m_zoom(ZOOM)
+    :m_front(glm::vec3(0.0f,0.0f,-1.0f)),m_movementSpeed(SPEED),m_zoom(ZOOM)
   {
     m_position=position;
     m_worldUp=up;
@@ -43,7 +42,7 @@ public:
   }
   // constructor with scalar values
   Camera(float posX,float posY,float posZ,float upX,float upY,float upZ,float yaw,float pitch)
-    :m_front(glm::vec3(0.0f,0.0f,-1.0f)),m_movementSpeed(SPEED),m_mouseSensitivity(SENSITIVITY),m_zoom(ZOOM)
+    :m_front(glm::vec3(0.0f,0.0f,-1.0f)),m_movementSpeed(SPEED),m_zoom(ZOOM)
   {
     m_position=glm::vec3(posX,posY,posZ);
     m_worldUp=glm::vec3(upX,upY,upZ);
@@ -58,11 +57,16 @@ public:
 
   void processInput(const EngineInput *input,float deltaTime){
     glm::vec3 walkMovement;
-    float length=walkMovement.length();
-    if(length>1)walkMovement/=length;
     walkMovement=m_front*input->forward+m_right*input->right;
+    float length=glm::length(walkMovement);
+    if(length>1)walkMovement/=length;
     walkMovement*=m_movementSpeed*deltaTime;
     m_position+=walkMovement;
+
+    m_yaw+=input->yaw_delta;
+    m_pitch+=input->pitch_delta;
+    m_pitch=glm::clamp(m_pitch,-89.0f,89.0f);
+    updateCameraVectors();
   }
 
 private:

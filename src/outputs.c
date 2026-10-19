@@ -58,9 +58,12 @@ void output_frame(struct wl_listener *listener,void *data){
     struct EngineInput input={
       .forward=server->camera_mode.forward-server->camera_mode.backward,
       .right=server->camera_mode.right-server->camera_mode.left,
+      .yaw_delta=server->camera_mode.yaw_delta,
+      .pitch_delta=server->camera_mode.pitch_delta,
     };
     animated=sandwl_world_output_render(output->world,width,height,&box,delta_time,&input);
     if(animated){
+      sandwl_camera_mode_clear_motion(server);
       server->engine_frame_time=frame_time;
       server->engine_has_frame_time=true;
     }

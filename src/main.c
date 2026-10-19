@@ -261,6 +261,7 @@ int main(int argc, char *argv[]){
   //configures a "seat"(up to one keyboard, pointer, touch, and drawing tablet device)
   //and a listener for new devices
   wl_list_init(&server.keyboards);
+  wl_list_init(&server.pointers);
   wl_list_init(&server.keybindings);
   wl_list_init(&server.camera_mode.bindings);
   server.new_input.notify=server_new_input;

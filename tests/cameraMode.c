@@ -35,6 +35,7 @@ static void key(struct wlr_keyboard *keyboard,uint32_t keycode,bool pressed){
 int main(void){
   struct sandwl_server server={0};
   wl_list_init(&server.keyboards);
+  wl_list_init(&server.pointers);
   wl_list_init(&server.keybindings);
   wl_list_init(&server.camera_mode.bindings);
   server.wl_display=wl_display_create();

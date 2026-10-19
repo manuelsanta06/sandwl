@@ -15,6 +15,8 @@ typedef struct Engine3D Engine3D;
 struct EngineInput{
   float forward;
   float right;
+  float yaw_delta;
+  float pitch_delta;
 };
 
 Engine3D* engine_create(EGLDisplay display,EGLContext context);

@@ -69,6 +69,7 @@ struct sandwl_server{
   struct wl_listener                      drag_icon_destroy;
   struct wl_listener                      start_drag;
   struct wl_list                          keyboards;
+  struct wl_list                          pointers;
   bool                                    pointer_grab_active;
   size_t                                  pointer_button_count;
   double                                  pointer_grab_x, pointer_grab_y;
@@ -106,6 +107,17 @@ struct sandwl_pointer_constraint{
   struct sandwl_server              *server;
   struct wlr_pointer_constraint_v1  *constraint;
   struct wl_listener                destroy;
+};
+
+struct sandwl_pointer{
+  struct wl_list link;
+  struct sandwl_server *server;
+  struct wlr_pointer *wlr_pointer;
+  struct wl_listener destroy;
+  bool has_absolute_position;
+  bool has_relative_motion;
+  double absolute_x,absolute_y;
+  double pending_absolute_dx,pending_absolute_dy;
 };
 
 struct sandwl_output{

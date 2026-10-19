@@ -2,6 +2,7 @@
 #include "types.h"
 
 #include <stdlib.h>
+#include <math.h>
 #include <lauxlib.h>
 #include <wlr/util/log.h>
 
@@ -33,6 +34,33 @@ static void clear_directions(struct sandwl_camera_mode *mode){
   mode->right=false;
 }
 
+void camera_mode_add_motion(struct sandwl_server *server,double dx,double dy){
+  if(!server->camera_mode.enabled||!isfinite(dx)||!isfinite(dy))
+    return;
+
+  const double sensitivity=0.1;
+  server->camera_mode.yaw_delta+=dx*sensitivity;
+  server->camera_mode.pitch_delta-=dy*sensitivity;
+}
+
+void sandwl_camera_mode_clear_motion(struct sandwl_server *server){
+  server->camera_mode.yaw_delta=0;
+  server->camera_mode.pitch_delta=0;
+
+  struct sandwl_pointer *pointer;
+  wl_list_for_each(pointer,&server->pointers,link){
+    pointer->pending_absolute_dx=0;
+    pointer->pending_absolute_dy=0;
+  }
+}
+
+static void reset_motion(struct sandwl_server *server){
+  sandwl_camera_mode_clear_motion(server);
+  struct sandwl_pointer *pointer;
+  wl_list_for_each(pointer,&server->pointers,link)
+    pointer->has_absolute_position=false;
+}
+
 void sandwl_camera_mode_set_enabled(struct sandwl_server *server,lua_State *state,bool enabled){
   struct sandwl_camera_mode *mode=&server->camera_mode;
   if(mode->enabled==enabled)
@@ -40,6 +68,7 @@ void sandwl_camera_mode_set_enabled(struct sandwl_server *server,lua_State *stat
 
   mode->enabled=enabled;
   clear_directions(mode);
+  reset_motion(server);
   if(enabled)
     return;
 
@@ -112,6 +141,7 @@ void sandwl_camera_mode_release_keyboard(struct sandwl_keyboard *keyboard,lua_St
 void sandwl_camera_mode_destroy(struct sandwl_server *server,lua_State *state){
   server->camera_mode.enabled=false;
   clear_directions(&server->camera_mode);
+  reset_motion(server);
 
   struct sandwl_keyboard *keyboard;
   wl_list_for_each(keyboard,&server->keyboards,link)

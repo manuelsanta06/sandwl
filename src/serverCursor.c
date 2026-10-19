@@ -1,4 +1,5 @@
 #include <stdlib.h>
+#include <math.h>
 
 #include <wlr/types/wlr_pointer_constraints_v1.h>
 #include <wlr/types/wlr_relative_pointer_v1.h>
@@ -8,17 +9,38 @@
 #include <wlr/types/wlr_cursor.h>
 #include <wlr/types/wlr_scene.h>
 #include <wlr/types/wlr_seat.h>
+#include <wlr/util/log.h>
 
 #include "processCursor.h"
 #include "serverCursor.h"
 #include "utilies.h"
 #include "types.h"
 
+static struct sandwl_pointer *find_pointer(struct sandwl_server *server,struct wlr_pointer *wlr_pointer){
+  struct sandwl_pointer *pointer;
+  wl_list_for_each(pointer,&server->pointers,link){
+    if(pointer->wlr_pointer==wlr_pointer)
+      return pointer;
+  }
+  return NULL;
+}
 
 void server_cursor_motion(struct wl_listener *listener,void *data){
   //forwarded by the cursor when a pointer emits _relative_ pointer motion event(ej a delta)
   struct sandwl_server *server=wl_container_of(listener,server,cursor_motion);
   struct wlr_pointer_motion_event *event=data;
+  struct sandwl_pointer *pointer=find_pointer(server,event->pointer);
+  if(pointer&&!pointer->has_relative_motion){
+    camera_mode_add_motion(server,-pointer->pending_absolute_dx,-pointer->pending_absolute_dy);
+    pointer->pending_absolute_dx=0;
+    pointer->pending_absolute_dy=0;
+    pointer->has_relative_motion=true;
+    pointer->has_absolute_position=false;
+  }
+  if(server->camera_mode.enabled){
+    camera_mode_add_motion(server,event->unaccel_dx,event->unaccel_dy);
+    return;
+  }
   wlr_relative_pointer_manager_v1_send_relative_motion(server->relative_pointer_manager,server->seat,
     (uint64_t)event->time_msec*1000,
     event->delta_x,event->delta_y,
@@ -45,6 +67,36 @@ void server_cursor_motion_absolute(struct wl_listener *listener,void *data){
   //emits these events
   struct sandwl_server *server=wl_container_of(listener,server,cursor_motion_absolute);
   struct wlr_pointer_motion_absolute_event *event=data;
+  if(server->camera_mode.enabled){
+    struct sandwl_pointer *pointer=find_pointer(server,event->pointer);
+    if(!pointer||pointer->has_relative_motion)
+      return;
+
+    if(!isfinite(event->x)||!isfinite(event->y)){
+      pointer->has_absolute_position=false;
+      return;
+    }
+
+    double x,y;
+    wlr_cursor_absolute_to_layout_coords(server->cursor,&event->pointer->base,
+      event->x,event->y,&x,&y);
+    if(!isfinite(x)||!isfinite(y)){
+      pointer->has_absolute_position=false;
+      return;
+    }
+
+    if(pointer->has_absolute_position){
+      double dx=x-pointer->absolute_x;
+      double dy=y-pointer->absolute_y;
+      camera_mode_add_motion(server,dx,dy);
+      pointer->pending_absolute_dx+=dx;
+      pointer->pending_absolute_dy+=dy;
+    }
+    pointer->absolute_x=x;
+    pointer->absolute_y=y;
+    pointer->has_absolute_position=true;
+    return;
+  }
   if(server->active_constraint&&server->active_constraint->type==WLR_POINTER_CONSTRAINT_V1_LOCKED){
     //cursor constraint
   }else{
@@ -149,9 +201,28 @@ void server_cursor_frame(struct wl_listener *listener,void *data){
   wlr_seat_pointer_notify_frame(server->seat);
 }
 
+static void pointer_handle_destroy(struct wl_listener *listener,void *data){
+  (void)data;
+  struct sandwl_pointer *pointer=wl_container_of(listener,pointer,destroy);
+  wl_list_remove(&pointer->destroy.link);
+  wl_list_remove(&pointer->link);
+  free(pointer);
+}
+
 void server_new_pointer(struct sandwl_server *server,struct wlr_input_device *device){
   //pointer configuration should be applied here
   wlr_cursor_attach_input_device(server->cursor,device);
+  struct sandwl_pointer *pointer=calloc(1,sizeof(*pointer));
+  if(!pointer){
+    wlr_log(WLR_ERROR,"Unable to track pointer input");
+    return;
+  }
+
+  pointer->server=server;
+  pointer->wlr_pointer=wlr_pointer_from_input_device(device);
+  pointer->destroy.notify=pointer_handle_destroy;
+  wl_signal_add(&device->events.destroy,&pointer->destroy);
+  wl_list_insert(&server->pointers,&pointer->link);
 }
 
 void handle_pointer_constraint_destroy(struct wl_listener *listener,void *data){

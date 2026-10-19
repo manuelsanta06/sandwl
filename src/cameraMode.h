@@ -11,8 +11,12 @@ struct sandwl_camera_mode{
   bool backward;
   bool left;
   bool right;
+  double yaw_delta;
+  double pitch_delta;
 };
 
+void camera_mode_add_motion(struct sandwl_server *server,double dx,double dy);
+void sandwl_camera_mode_clear_motion(struct sandwl_server *server);
 void sandwl_camera_mode_set_enabled(struct sandwl_server *server,lua_State *state,bool enabled);
 
 bool sandwl_camera_mode_handle_key(struct sandwl_keyboard *keyboard,lua_State *state,
