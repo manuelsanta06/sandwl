@@ -3,6 +3,7 @@
 #include "inputData.hpp"
 #include "engineApi.h"
 #include "camera.hpp"
+#include "textureLoader.hpp"
 
 #include <GLES3/gl3.h>
 #include <glm/ext/vector_float3.hpp>
@@ -38,21 +39,25 @@ void CoreEngine::init(){
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER,EBO);
   glBufferData(GL_ELEMENT_ARRAY_BUFFER,sizeof(indexPlane),indexPlane,GL_STATIC_DRAW);
 
-  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,6*sizeof(float),(void*)0);
+  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)0);
   glEnableVertexAttribArray(0);
-  glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,6*sizeof(float),(void*)(3*sizeof(float)));
+  glVertexAttribPointer(1,3,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)(3*sizeof(float)));
   glEnableVertexAttribArray(1);
+  glVertexAttribPointer(2,2,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)(6*sizeof(float)));
+  glEnableVertexAttribArray(2);
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER,0);
 
   glGenVertexArrays(1,&lightVAO);
   glBindVertexArray(lightVAO);
   glBindBuffer(GL_ARRAY_BUFFER,VBO);
-  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,6*sizeof(float),(void*)0);
+  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,8*sizeof(float),(void*)0);
   glEnableVertexAttribArray(0);
 
   mainProgram.load("src/world/shaders/basic.vert","src/world/shaders/basic.frag");
   lightProgram.load("src/world/shaders/light.vert","src/world/shaders/light.frag");
+  diffuseMap=loadTexture("src/world/textures/metalBoxDiffuser.png");
+  specularMap=loadTexture("src/world/textures/metalBoxSpecular.png");
 }
 
 CoreEngine::~CoreEngine(){
@@ -62,6 +67,7 @@ CoreEngine::~CoreEngine(){
   glDeleteVertexArrays(1,&lightVAO);
   glDeleteBuffers(1,&VBO);
   glDeleteBuffers(1,&EBO);
+  if(diffuseMap)glDeleteTextures(1,&diffuseMap);
 }
 
 bool CoreEngine::render(unsigned int framebuffer,int targetWidth,int targetHeight,float deltaTime,const EngineInput *input){
@@ -109,7 +115,7 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
 
   //clears
   glViewport(0,0,width,height);
-  glClearColor(0.2f,0.1f,0.3f,1.0f);
+  glClearColor(0.0f,0.0f,0.0f,1.0f);
   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
   mainProgram.use();
@@ -124,19 +130,22 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
   mainProgram.setUniform("view",view);
   mainProgram.setUniform("projection",proj);
 
-  mainProgram.setUniform("lightColor",glm::vec3(1.0f,1.0f,1.0f));
-  mainProgram.setUniform("material.ambient", 1.0f,0.5f,0.31f);
-  mainProgram.setUniform("material.diffuse", 1.0f,0.5f,0.31f);
-  mainProgram.setUniform("material.specular",0.5f,0.5f,0.5f);
+  mainProgram.setUniform("light.ambient",0.2f,0.2f,0.2f);
+  mainProgram.setUniform("light.diffuse",0.5f,0.5f,0.5f);
+  mainProgram.setUniform("material.diffuse",0);
+  mainProgram.setUniform("material.specular",1);
   mainProgram.setUniform("material.shininess",32.0f);
   glm::vec3 currentLightPos=glm::vec3(
       (glm::rotate(glm::mat4(1.0f),glm::radians(degsLight),glm::vec3(0.0f,0.0f,1.0f)))
       *glm::vec4(lightPos,1.0f));
   mainProgram.setUniform("light.position",currentLightPos);
-  mainProgram.setUniform("light.ambient", 0.2f,0.2f,0.2f);
-  mainProgram.setUniform("light.diffuse", 0.5f,0.5f,0.5f);
   mainProgram.setUniform("light.specular",1.0f,1.0f,1.0f);
   mainProgram.setUniform("viewPos",mainCamera.m_position);
+
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D,diffuseMap);
+  glActiveTexture(GL_TEXTURE1);
+  glBindTexture(GL_TEXTURE_2D,specularMap);
 
   //draws
   // glDrawElements(GL_LINE_LOOP,6,GL_UNSIGNED_INT,0);

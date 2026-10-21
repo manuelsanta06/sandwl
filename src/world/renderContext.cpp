@@ -27,6 +27,12 @@ EngineGLState::EngineGLState(){
   glGetIntegerv(GL_DRAW_FRAMEBUFFER_BINDING,&drawFramebuffer);
   glGetIntegerv(GL_READ_FRAMEBUFFER_BINDING,&readFramebuffer);
   glGetIntegerv(GL_RENDERBUFFER_BINDING,&renderbuffer);
+  glGetIntegerv(GL_ACTIVE_TEXTURE,&activeTexture);
+  glGetIntegerv(GL_TEXTURE_BINDING_2D,&activeTextureBinding);
+  glActiveTexture(GL_TEXTURE0);
+  glGetIntegerv(GL_TEXTURE_BINDING_2D,&texture0Binding);
+  glGetIntegerv(GL_UNPACK_ALIGNMENT,&unpackAlignment);
+  glActiveTexture(activeTexture);
   glGetIntegerv(GL_CURRENT_PROGRAM,&program);
   glGetIntegerv(GL_VERTEX_ARRAY_BINDING,&vertexArray);
   glGetIntegerv(GL_ARRAY_BUFFER_BINDING,&arrayBuffer);
@@ -54,6 +60,11 @@ EngineGLState::~EngineGLState(){
   glBindFramebuffer(GL_DRAW_FRAMEBUFFER,drawFramebuffer);
   glBindFramebuffer(GL_READ_FRAMEBUFFER,readFramebuffer);
   glBindRenderbuffer(GL_RENDERBUFFER,renderbuffer);
+  glActiveTexture(GL_TEXTURE0);
+  glBindTexture(GL_TEXTURE_2D,texture0Binding);
+  glPixelStorei(GL_UNPACK_ALIGNMENT,unpackAlignment);
+  glActiveTexture(activeTexture);
+  if(activeTexture!=GL_TEXTURE0)glBindTexture(GL_TEXTURE_2D,activeTextureBinding);
   glUseProgram(program);
   glBindVertexArray(vertexArray);
   glBindBuffer(GL_ARRAY_BUFFER,arrayBuffer);

@@ -38,6 +38,7 @@ private:
   };
   GLboolean enabled[sizeof(capabilities)/sizeof(capabilities[0])];
   GLint drawFramebuffer,readFramebuffer,renderbuffer;
+  GLint activeTexture,activeTextureBinding,texture0Binding,unpackAlignment;
   GLint program,vertexArray,arrayBuffer;
   GLint viewport[4];
   GLint depthFunction;

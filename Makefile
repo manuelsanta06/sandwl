@@ -4,7 +4,7 @@ VERSION?=0.0.0
 
 PKG_CONFIG ?= pkg-config
 
-PKGS = wlroots-0.20 wayland-server xkbcommon lua54 egl glesv2
+PKGS = wlroots-0.20 wayland-server xkbcommon lua54 egl glesv2 libpng
 
 CFLAGS_PKG_CONFIG != $(PKG_CONFIG) --cflags $(PKGS)
 LIBS != $(PKG_CONFIG) --libs $(PKGS)
