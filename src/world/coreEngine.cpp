@@ -27,7 +27,7 @@ void CoreEngine::init(){
   glRenderbufferStorage(GL_RENDERBUFFER,GL_DEPTH_COMPONENT24,width,height);
   glBindRenderbuffer(GL_RENDERBUFFER,0);
 
-  glGenVertexArrays(1, &VAO);
+  glGenVertexArrays(1,&VAO);
   glBindVertexArray(VAO);
 
   glGenBuffers(1,&VBO);
@@ -109,7 +109,7 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
 
   //clears
   glViewport(0,0,width,height);
-  glClearColor(0.2f, 0.1f, 0.3f, 1.0f);
+  glClearColor(0.2f,0.1f,0.3f,1.0f);
   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
   mainProgram.use();
@@ -124,17 +124,23 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
   mainProgram.setUniform("view",view);
   mainProgram.setUniform("projection",proj);
 
-  mainProgram.setUniform("objectColor",glm::vec3(1.0f,0.5f,0.31f));
   mainProgram.setUniform("lightColor",glm::vec3(1.0f,1.0f,1.0f));
-  glm::vec3 currentLightPos = glm::vec3(
+  mainProgram.setUniform("material.ambient", 1.0f,0.5f,0.31f);
+  mainProgram.setUniform("material.diffuse", 1.0f,0.5f,0.31f);
+  mainProgram.setUniform("material.specular",0.5f,0.5f,0.5f);
+  mainProgram.setUniform("material.shininess",32.0f);
+  glm::vec3 currentLightPos=glm::vec3(
       (glm::rotate(glm::mat4(1.0f),glm::radians(degsLight),glm::vec3(0.0f,0.0f,1.0f)))
-      *glm::vec4(lightPos, 1.0f));
-  mainProgram.setUniform("lightPos",currentLightPos);
+      *glm::vec4(lightPos,1.0f));
+  mainProgram.setUniform("light.position",currentLightPos);
+  mainProgram.setUniform("light.ambient", 0.2f,0.2f,0.2f);
+  mainProgram.setUniform("light.diffuse", 0.5f,0.5f,0.5f);
+  mainProgram.setUniform("light.specular",1.0f,1.0f,1.0f);
   mainProgram.setUniform("viewPos",mainCamera.m_position);
 
   //draws
-  // glDrawElements(GL_LINE_LOOP, 6, GL_UNSIGNED_INT, 0);
-  // glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+  // glDrawElements(GL_LINE_LOOP,6,GL_UNSIGNED_INT,0);
+  // glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
   for(short i=0;i<10;i++){
     model=glm::translate(glm::mat4(1.0f),cubePositions[i]);
     model=glm::rotate(model,glm::radians(degsCubes*(i==0?1:i)),glm::vec3(1.0f,1.0f,1.0f));
