@@ -17,6 +17,7 @@ CoreEngine::CoreEngine(int width,int height)
 
 void CoreEngine::relaodShaders(){
   mainProgram.load("src/world/shaders/basic.vert","src/world/shaders/basic.frag");
+  lightProgram.load("src/world/shaders/light.vert","src/world/shaders/light.frag");
 }
 
 void CoreEngine::init(){
@@ -44,13 +45,21 @@ void CoreEngine::init(){
   glBindVertexArray(0);
   glBindBuffer(GL_ARRAY_BUFFER,0);
 
+  glGenVertexArrays(1,&lightVAO);
+  glBindVertexArray(lightVAO);
+  glBindBuffer(GL_ARRAY_BUFFER,VBO);
+  glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,6*sizeof(float),(void*)0);
+  glEnableVertexAttribArray(0);
+
   mainProgram.load("src/world/shaders/basic.vert","src/world/shaders/basic.frag");
+  lightProgram.load("src/world/shaders/light.vert","src/world/shaders/light.frag");
 }
 
 CoreEngine::~CoreEngine(){
   if(!isInitialized)return;
   glDeleteRenderbuffers(1,&depthRBO);
   glDeleteVertexArrays(1,&VAO);
+  glDeleteVertexArrays(1,&lightVAO);
   glDeleteBuffers(1,&VBO);
   glDeleteBuffers(1,&EBO);
 }
@@ -91,26 +100,37 @@ bool CoreEngine::render(unsigned int framebuffer,int targetWidth,int targetHeigh
 void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
   mainCamera.processInput(input,deltaTime);
   static float degsCubes=0;
-  degsCubes+=45*deltaTime;
+  static float degsLight=0;
+  glm::vec3 lightPos(3.0f,0.0f,-3.0f);
+  // degsCubes+=45*deltaTime;
   if(degsCubes>=360)degsCubes-=360;
-  //set the enviroment up
-  mainProgram.use();
-  glBindVertexArray(VAO);
+  degsLight+=10*deltaTime;
+  if(degsLight>=360)degsLight-=360;
 
   //clears
   glViewport(0,0,width,height);
   glClearColor(0.2f, 0.1f, 0.3f, 1.0f);
   glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-  //shaders uniforms
-  model=glm::rotate(glm::mat4(1.0f),glm::radians(-55.0f),glm::vec3(1.0f,0.0f,0.0f));
+  mainProgram.use();
+  glBindVertexArray(VAO);
 
+  //shaders uniforms
   float degFov=45.0f;
   proj =glm::perspective(glm::radians(degFov),(float)width/(float)height,0.1f,100.0f);
   proj[1][1]*=-1;
 
-  mainProgram.setUniform("view",mainCamera.GetViewMatrix());
+  glm::mat4 view=mainCamera.GetViewMatrix();
+  mainProgram.setUniform("view",view);
   mainProgram.setUniform("projection",proj);
+
+  mainProgram.setUniform("objectColor",glm::vec3(1.0f,0.5f,0.31f));
+  mainProgram.setUniform("lightColor",glm::vec3(1.0f,1.0f,1.0f));
+  glm::vec3 currentLightPos = glm::vec3(
+      (glm::rotate(glm::mat4(1.0f),glm::radians(degsLight),glm::vec3(0.0f,0.0f,1.0f)))
+      *glm::vec4(lightPos, 1.0f));
+  mainProgram.setUniform("lightPos",currentLightPos);
+  mainProgram.setUniform("viewPos",mainCamera.m_position);
 
   //draws
   // glDrawElements(GL_LINE_LOOP, 6, GL_UNSIGNED_INT, 0);
@@ -121,6 +141,16 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
     mainProgram.setUniform("model",model);
     glDrawArrays(GL_TRIANGLES,0,36);
   }
+
+  lightProgram.use();
+  lightProgram.setUniform("view",view);
+  lightProgram.setUniform("projection",proj);
+  model=glm::mat4(1.0f);
+  model=glm::translate(model,currentLightPos);
+  model=glm::scale(model,glm::vec3(0.2f));
+  lightProgram.setUniform("model",model);
+  glBindVertexArray(lightVAO);
+  glDrawArrays(GL_TRIANGLES,0,36);
 
   glBindVertexArray(0);
   glUseProgram(0);

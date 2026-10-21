@@ -28,10 +28,12 @@ private:
   int height;
 
   EasyProgram mainProgram;
+  EasyProgram lightProgram;
     
   glm::mat4 model=glm::mat4(1.0f);
   glm::mat4 proj =0;
 
+  unsigned int lightVAO;
   unsigned int VAO;
   unsigned int VBO;
   unsigned int EBO;
