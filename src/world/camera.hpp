@@ -17,8 +17,8 @@ const float ZOOM        = 45.0f;
 class Camera{
 public:
   glm::vec3 m_position;
-private:
   glm::vec3 m_front;
+private:
   glm::vec3 m_up;
   glm::vec3 m_right;
   glm::vec3 m_worldUp;
