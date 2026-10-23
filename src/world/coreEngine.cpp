@@ -149,13 +149,14 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
   mainProgram.setUniform("pointLight.linear",0.09f);
   mainProgram.setUniform("pointLight.quadratic",0.032f);
 
+  // mainProgram.setUniform("spotLight.position",mainCamera.m_position);
   mainProgram.setUniform("spotLight.position",currentLightPos);
   mainProgram.setUniform("spotLight.ambient",0.2f,0.2f,0.2f);
   mainProgram.setUniform("spotLight.diffuse",0.5f,0.5f,0.5f);
   mainProgram.setUniform("spotLight.specular",1.0f,1.0f,1.0f);
-  mainProgram.setUniform("spotLight.position",mainCamera.m_position);
   mainProgram.setUniform("spotLight.direction",mainCamera.m_front);
-  mainProgram.setUniform("spotLight.cutOff",glm::cos(glm::radians(12.5f)));
+  mainProgram.setUniform("spotLight.cutOff",glm::cos(glm::radians(7.0f)));
+  mainProgram.setUniform("spotLight.outerCutOff",glm::cos(glm::radians(12.0f)));
 
   mainProgram.setUniform("viewPos",mainCamera.m_position);
 

@@ -46,6 +46,7 @@ struct SpotLight{
   vec3 position;
   vec3 direction;
   float cutOff; //cosine of the actual angle(in radians)
+  float outerCutOff;
 
   vec3 ambient;
   vec3 diffuse;
@@ -112,30 +113,30 @@ vec4 pointLighting(){
   return vec4(ambient+diffuse+specular,1.0);
 }
 vec4 spotLighting(){
-  vec3 diffuse=vec3(0.0,0.0,0.0);
-  vec3 ambient=vec3(0.0,0.0,0.0);
-  vec3 specular=vec3(0.0,0.0,0.0);
-  //ambient
-  ambient=spotLight.ambient*vec3(texture(material.diffuse,texCoord));
+  vec3 ambient=spotLight.ambient*vec3(texture(material.diffuse,texCoord));
 
+  vec3 norm=normalize(normal);
   vec3 lightDir=normalize(spotLight.position-fragPos);
-  float theta=dot(lightDir,normalize(-spotLight.direction));
-  if(theta>spotLight.cutOff){
-    // diffuse
-    vec3 norm=normalize(normal);
-    float diff=max(dot(norm,lightDir),0.0);
-    diffuse=spotLight.diffuse*diff*vec3(texture(material.diffuse,texCoord));
-    // specular
-    vec3 viewDir=normalize(viewPos-fragPos);
-    vec3 reflectDir=reflect(-lightDir,norm);
-    float spec=pow(max(dot(viewDir,reflectDir),0.0),material.shininess);
-    specular=spotLight.specular*spec*vec3(texture(material.specular,texCoord));
+  
+  // Diffuse
+  float diff=max(dot(norm,lightDir),0.0);
+  vec3 diffuse=spotLight.diffuse*diff*vec3(texture(material.diffuse,texCoord));
+  
+  // Specular
+  vec3 viewDir=normalize(viewPos-fragPos);
+  vec3 reflectDir=reflect(-lightDir,norm);
+  float spec=pow(max(dot(viewDir,reflectDir),0.0),material.shininess);
+  vec3 specular=spotLight.specular*spec*vec3(texture(material.specular,texCoord));
 
-    return vec4(ambient+diffuse+specular,1.0);
-  }
-  else{
-    return vec4(ambient,0.0);
-  }
+  // Spotlight
+  float theta=dot(lightDir,normalize(-spotLight.direction));
+  float epsilon=spotLight.cutOff-spotLight.outerCutOff;
+  float intensity=clamp((theta-spotLight.outerCutOff)/epsilon,0.0,1.0);
+  
+  diffuse *=intensity;
+  specular*=intensity;
+  
+  return vec4(ambient+diffuse+specular,1.0);
 }
 
 void main(){
