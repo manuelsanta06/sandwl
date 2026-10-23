@@ -136,10 +136,6 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
   glm::vec3 currentLightPos=glm::vec3(
       (glm::rotate(glm::mat4(1.0f),glm::radians(degsLight),glm::vec3(0.0f,0.0f,1.0f)))
       *glm::vec4(lightPos,1.0f));
-  mainProgram.setUniform("light.position",currentLightPos);
-  mainProgram.setUniform("light.ambient",0.2f,0.2f,0.2f);
-  mainProgram.setUniform("light.diffuse",0.5f,0.5f,0.5f);
-  mainProgram.setUniform("light.specular",1.0f,1.0f,1.0f);
 
   mainProgram.setUniform("pointLight.position",currentLightPos);
   mainProgram.setUniform("pointLight.ambient",0.2f,0.2f,0.2f);
@@ -149,8 +145,8 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
   mainProgram.setUniform("pointLight.linear",0.09f);
   mainProgram.setUniform("pointLight.quadratic",0.032f);
 
-  // mainProgram.setUniform("spotLight.position",mainCamera.m_position);
-  mainProgram.setUniform("spotLight.position",currentLightPos);
+  mainProgram.setUniform("spotLight.position",mainCamera.m_position);
+  // mainProgram.setUniform("spotLight.position",currentLightPos);
   mainProgram.setUniform("spotLight.ambient",0.2f,0.2f,0.2f);
   mainProgram.setUniform("spotLight.diffuse",0.5f,0.5f,0.5f);
   mainProgram.setUniform("spotLight.specular",1.0f,1.0f,1.0f);
