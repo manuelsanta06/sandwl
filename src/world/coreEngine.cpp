@@ -12,6 +12,10 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 CoreEngine::CoreEngine(int width,int height)
   :mainCamera(Camera(glm::vec3(0,0,3))),width(width),height(height)
 {}

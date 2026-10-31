@@ -11,6 +11,11 @@ uniform vec3 viewPos;
 struct Material{
   sampler2D diffuse;
   sampler2D specular;
+  sampler2D texture_diffuse1;
+  sampler2D texture_diffuse2;
+  sampler2D texture_diffuse3;
+  sampler2D texture_specular1;
+  sampler2D texture_specular2;
   float shininess;
 };
 uniform Material material;
@@ -58,10 +63,10 @@ void main(){
   vec3 viewDir=normalize(viewPos-fragPos);
 
   vec3 colorAcumulator=vec3(0.0,0.0,0.0);
-  colorAcumulator+=dirLighting(dirLight,normal,viewDir);
+  colorAcumulator+=dirLighting(dirLight,norm,viewDir);
   colorAcumulator+=pointLighting(pointLight,norm,fragPos,viewDir);
   colorAcumulator+=spotLighting(spotLight,norm,fragPos,viewDir);
-  FragColor=vec4(colorAcumulator,0.0);
+  FragColor=vec4(colorAcumulator,1.0);
 }
 
 vec3 dirLighting(DirectionalLight light,vec3 normal,vec3 viewDir){
@@ -98,12 +103,11 @@ vec3 pointLighting(PointLight light,vec3 normal,vec3 fragPos,vec3 viewDir){
   return ambient+diffuse+specular;
 }
 
-vec3 spotLighting(SpotLight light,vec3 normal,vec3 fragPos,vec3 viewPos){
+vec3 spotLighting(SpotLight light,vec3 normal,vec3 fragPos,vec3 viewDir){
   vec3 lightDir=normalize(spotLight.position-fragPos);
   
   float diff=max(dot(normal,lightDir),0.0);
   
-  vec3 viewDir=normalize(viewPos-fragPos);
   vec3 reflectDir=reflect(-lightDir,normal);
   float spec=pow(max(dot(viewDir,reflectDir),0.0),material.shininess);
 
