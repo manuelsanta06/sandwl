@@ -15,7 +15,7 @@ BUILD_DIR = build
 MODE_FLAGS = -O2
 endif
 
-PKGS = wlroots-0.20 wayland-server xkbcommon lua54 egl glesv2 libpng assimp
+PKGS = wlroots-0.20 wayland-server xkbcommon lua54 egl glesv2 assimp
 
 CFLAGS_PKG_CONFIG != $(PKG_CONFIG) --cflags $(PKGS)
 LIBS != $(PKG_CONFIG) --libs $(PKGS)

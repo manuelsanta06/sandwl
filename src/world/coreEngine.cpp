@@ -60,8 +60,10 @@ void CoreEngine::init(){
 
   mainProgram.load("src/world/shaders/basic.vert","src/world/shaders/basic.frag");
   lightProgram.load("src/world/shaders/light.vert","src/world/shaders/light.frag");
-  diffuseMap=loadTexture("src/world/textures/metalBoxDiffuser.png");
-  specularMap=loadTexture("src/world/textures/metalBoxSpecular.png");
+  diffuseMap=loadTextureFile("src/world/learnAssets/metalBoxDiffuser.png");
+  specularMap=loadTextureFile("src/world/learnAssets/metalBoxSpecular.png");
+  backpack=Model("src/world/learnAssets/backpack/backpack.obj");
+  elephant=Model("src/world/learnAssets/elephant/source/low+polly+elephant.glb");
 }
 
 CoreEngine::~CoreEngine(){
@@ -112,7 +114,7 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
   static float degsCubes=0;
   static float degsLight=0;
   glm::vec3 lightPos(3.0f,0.0f,-3.0f);
-  // degsCubes+=45*deltaTime;
+  degsCubes+=45*deltaTime;
   if(degsCubes>=360)degsCubes-=360;
   degsLight+=10*deltaTime;
   if(degsLight>=360)degsLight-=360;
@@ -127,7 +129,7 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
 
   //shaders uniforms
   float degFov=45.0f;
-  proj =glm::perspective(glm::radians(degFov),(float)width/(float)height,0.1f,100.0f);
+  glm::mat4 proj=glm::perspective(glm::radians(degFov),(float)width/(float)height,0.1f,100.0f);
   proj[1][1]*=-1;
 
   glm::mat4 view=mainCamera.GetViewMatrix();
@@ -160,21 +162,30 @@ void CoreEngine::renderScene(float deltaTime,const EngineInput *input){
 
   mainProgram.setUniform("viewPos",mainCamera.m_position);
 
+
+  glm::mat4 model=glm::mat4(1.0f);
+  //draws boxes
   glActiveTexture(GL_TEXTURE0);
   glBindTexture(GL_TEXTURE_2D,diffuseMap);
   glActiveTexture(GL_TEXTURE1);
   glBindTexture(GL_TEXTURE_2D,specularMap);
-
-  //draws
-  // glDrawElements(GL_LINE_LOOP,6,GL_UNSIGNED_INT,0);
-  // glDrawElements(GL_TRIANGLES,6,GL_UNSIGNED_INT,0);
   for(short i=0;i<10;i++){
     model=glm::translate(glm::mat4(1.0f),cubePositions[i]);
     model=glm::rotate(model,glm::radians(degsCubes*(i==0?1:i)),glm::vec3(1.0f,1.0f,1.0f));
     mainProgram.setUniform("model",model);
     glDrawArrays(GL_TRIANGLES,0,36);
   }
+  
+  //draw models
+  model=glm::translate(glm::mat4(1.0f),glm::vec3(0,0,10));
+  mainProgram.setUniform("model",model);
+  backpack.draw(mainProgram);
+  model=glm::translate(glm::mat4(1.0f),glm::vec3(0,5,3));
+  model=glm::rotate(model,glm::radians(degsCubes),glm::vec3(1.0f,1.0f,1.0f));
+  mainProgram.setUniform("model",model);
+  elephant.draw(mainProgram);
 
+  //draw light
   lightProgram.use();
   lightProgram.setUniform("view",view);
   lightProgram.setUniform("projection",proj);

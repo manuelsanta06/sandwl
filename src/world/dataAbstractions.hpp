@@ -22,6 +22,7 @@ enum class TextureType{
 struct Texture{
   unsigned int id;
   TextureType type;
+  std::string path;
 };
 
 class Mesh{
@@ -43,16 +44,17 @@ private:
 
 class Model{
 public:
-  Model(char *path){
-    loadModel(path);
+  Model(const char *path){
+    if(path!=0)loadModel(path);
   }
   void draw(EasyProgram &program)const;
 private:
   std::vector<Mesh> meshes;
+  std::vector<Texture> textures_loaded;
   std::string directory;
 
   void loadModel(std::string path);
   void processNode(aiNode *node,const aiScene *scene);
   Mesh processMesh(aiMesh *mesh,const aiScene *scene);
-  std::vector<Texture> loadMaterialTextures(aiMaterial *mat,aiTextureType type,std::string typeName);
+  std::vector<Texture> loadMaterialTextures(aiMaterial *mat,aiTextureType aiType,TextureType type);
 };

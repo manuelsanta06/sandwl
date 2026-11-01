@@ -1,5 +1,6 @@
 #pragma once
 
+#include "dataAbstractions.hpp"
 #include "easyShaders.hpp"
 #include "engineApi.h"
 #include "camera.hpp"
@@ -29,10 +30,7 @@ private:
 
   EasyProgram mainProgram;
   EasyProgram lightProgram;
-    
-  glm::mat4 model=glm::mat4(1.0f);
-  glm::mat4 proj =0;
-
+  
   unsigned int lightVAO;
   unsigned int VAO;
   unsigned int VBO;
@@ -40,4 +38,7 @@ private:
 
   unsigned int diffuseMap=0;
   unsigned int specularMap=0;
+
+  Model backpack=0;
+  Model elephant=0;
 };

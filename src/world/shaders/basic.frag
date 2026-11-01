@@ -77,8 +77,8 @@ vec3 dirLighting(DirectionalLight light,vec3 normal,vec3 viewDir){
   vec3 reflectDir=reflect(-lightDir,normal);
   float spec=pow(max(dot(viewDir,reflectDir),0.0),material.shininess);
   
-  vec3 ambient  =light.ambient  *     vec3(texture(material.diffuse,texCoord));
-  vec3 diffuse  =light.diffuse  *diff*vec3(texture(material.diffuse,texCoord));
+  vec3 ambient  =light.ambient  *     vec3(texture(material.texture_diffuse1,texCoord));
+  vec3 diffuse  =light.diffuse  *diff*vec3(texture(material.texture_diffuse1,texCoord));
   vec3 specular =light.specular *spec*vec3(texture(material.specular,texCoord));
   return ambient+diffuse+specular;
 }
@@ -94,8 +94,8 @@ vec3 pointLighting(PointLight light,vec3 normal,vec3 fragPos,vec3 viewDir){
   float distance=length(light.position-fragPos);
   float attenuation=1.0/(light.constant+light.linear*distance+light.quadratic*(distance*distance));
   
-  vec3 ambient  =light.ambient  *     vec3(texture(material.diffuse,texCoord));
-  vec3 diffuse  =light.diffuse  *diff*vec3(texture(material.diffuse,texCoord));
+  vec3 ambient  =light.ambient  *     vec3(texture(material.texture_diffuse1,texCoord));
+  vec3 diffuse  =light.diffuse  *diff*vec3(texture(material.texture_diffuse1,texCoord));
   vec3 specular =light.specular *spec*vec3(texture(material.specular,texCoord));
   ambient  *= attenuation;
   diffuse  *= attenuation;
@@ -116,8 +116,8 @@ vec3 spotLighting(SpotLight light,vec3 normal,vec3 fragPos,vec3 viewDir){
   float epsilon=spotLight.cutOff-spotLight.outerCutOff;
   float intensity=clamp((theta-spotLight.outerCutOff)/epsilon,0.0,1.0);
   
-  vec3 ambient  =spotLight.ambient*      vec3(texture(material.diffuse,texCoord));
-  vec3 diffuse  =spotLight.diffuse*diff *vec3(texture(material.diffuse,texCoord));
+  vec3 ambient  =spotLight.ambient*      vec3(texture(material.texture_diffuse1,texCoord));
+  vec3 diffuse  =spotLight.diffuse*diff *vec3(texture(material.texture_diffuse1,texCoord));
   vec3 specular =spotLight.specular*spec*vec3(texture(material.specular,texCoord));
   diffuse *=intensity;
   specular*=intensity;
