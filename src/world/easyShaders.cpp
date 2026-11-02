@@ -57,26 +57,30 @@ void EasyProgram::load(const char* vertexPath,const char* fragmentPath){
     return;
   }
 
-  ID=glCreateProgram();
-  glAttachShader(ID,Svertex);
-  glAttachShader(ID,Sfragment);
-  glLinkProgram(ID);
+  unsigned int newID=glCreateProgram();
+  glAttachShader(newID,Svertex);
+  glAttachShader(newID,Sfragment);
+  glLinkProgram(newID);
 
   GLint linked;
-  glGetProgramiv(ID,GL_LINK_STATUS,&linked);
+  glGetProgramiv(newID,GL_LINK_STATUS,&linked);
+  glDeleteShader(Svertex);
+  glDeleteShader(Sfragment);
   if(!linked){
     GLint logLength;
-    glGetProgramiv(ID,GL_INFO_LOG_LENGTH,&logLength);
+    glGetProgramiv(newID,GL_INFO_LOG_LENGTH,&logLength);
     std::string infoLog(logLength>0?logLength:1,'\0');
     GLsizei written;
-    glGetProgramInfoLog(ID,infoLog.size(),&written,infoLog.data());
+    glGetProgramInfoLog(newID,infoLog.size(),&written,infoLog.data());
     infoLog.resize(written);
     std::cerr<<"[3DEngine] ERROR::PROGRAM::LINKING_FAILED vertex: "<<vertexPath
       <<" fragment: "<<fragmentPath<<"\n"<<infoLog<<std::endl;
+    glDeleteProgram(newID);
+    return;
   }
 
-  glDeleteShader(Svertex);
-  glDeleteShader(Sfragment);
+  if(ID!=0)glDeleteProgram(ID);
+  ID=newID;
 }
 
 EasyProgram::~EasyProgram(){
