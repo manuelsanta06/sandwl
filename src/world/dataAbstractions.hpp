@@ -44,8 +44,8 @@ private:
 
 class Model{
 public:
-  Model(const char *path){
-    if(path!=0)loadModel(path);
+  Model(const char *path,bool flipUVs=true){
+    if(path!=0)loadModel(path,flipUVs);
   }
   void draw(EasyProgram &program)const;
 private:
@@ -53,8 +53,8 @@ private:
   std::vector<Texture> textures_loaded;
   std::string directory;
 
-  void loadModel(std::string path);
+  void loadModel(std::string path,bool flipUVs);
   void processNode(aiNode *node,const aiScene *scene);
   Mesh processMesh(aiMesh *mesh,const aiScene *scene);
-  std::vector<Texture> loadMaterialTextures(aiMaterial *mat,aiTextureType aiType,TextureType type);
+  std::vector<Texture> loadMaterialTextures(aiMaterial *mat,const aiScene *scene,aiTextureType aiType,TextureType type);
 };

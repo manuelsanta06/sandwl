@@ -76,9 +76,11 @@ void Model::draw(EasyProgram &program)const{
   }
 }
 
-void Model::loadModel(std::string path){
+void Model::loadModel(std::string path,bool flipUVs){
   Assimp::Importer import;
-  const aiScene *scene=import.ReadFile(path,aiProcess_Triangulate|aiProcess_FlipUVs);
+  unsigned int flags=aiProcess_Triangulate;
+  if(flipUVs)flags|=aiProcess_FlipUVs;
+  const aiScene *scene=import.ReadFile(path,flags);
   if(!scene||scene->mFlags&AI_SCENE_FLAGS_INCOMPLETE||!scene->mRootNode){
     std::cerr<<"ERROR::ASSIMP::"<<import.GetErrorString()<<std::endl;
     return;
@@ -133,21 +135,20 @@ Mesh Model::processMesh(aiMesh *mesh,const aiScene *scene){
   }
   if(mesh->mMaterialIndex<scene->mNumMaterials){
     aiMaterial *material=scene->mMaterials[mesh->mMaterialIndex];
-    std::vector<Texture> diffuseMaps=loadMaterialTextures(material,aiTextureType_DIFFUSE,TextureType::DIFFUSE);
+    std::vector<Texture> diffuseMaps=loadMaterialTextures(material,scene,aiTextureType_DIFFUSE,TextureType::DIFFUSE);
     textures.insert(textures.end(),diffuseMaps.begin(),diffuseMaps.end());
-    std::vector<Texture> specularMaps=loadMaterialTextures(material,aiTextureType_SPECULAR,TextureType::SPECULAR);
+    std::vector<Texture> specularMaps=loadMaterialTextures(material,scene,aiTextureType_SPECULAR,TextureType::SPECULAR);
     textures.insert(textures.end(),specularMaps.begin(),specularMaps.end());
   }
 
   return Mesh(vertices,indices,textures);
 }
 
-std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat,aiTextureType aiType,TextureType type){
+std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat,const aiScene *scene,aiTextureType aiType,TextureType type){
   std::vector<Texture> textures;
   for(unsigned int i=0;i<mat->GetTextureCount(aiType);i++){
     aiString str;
     if(mat->GetTexture(aiType,i,&str)!=AI_SUCCESS)continue;
-    std::filesystem::path texturePath=std::filesystem::path(directory)/str.C_Str();
     bool skip=false;
     for(unsigned int j=0;j<textures_loaded.size();j++){
       if(std::strcmp(textures_loaded[j].path.data(),str.C_Str())==0){
@@ -158,7 +159,18 @@ std::vector<Texture> Model::loadMaterialTextures(aiMaterial *mat,aiTextureType a
     }
     if(!skip){
       Texture texture;
-      texture.id=loadTextureFile(texturePath.c_str());
+      const aiTexture *embedded=scene->GetEmbeddedTexture(str.C_Str());
+      if(embedded){
+        if(embedded->mHeight!=0){
+          std::cerr<<"[3DEngine] Uncompressed embedded texture is unsupported: "<<str.C_Str()<<std::endl;
+          continue;
+        }
+        texture.id=loadTextureMemory(reinterpret_cast<const unsigned char*>(embedded->pcData),embedded->mWidth);
+      }else{
+        std::filesystem::path texturePath=std::filesystem::path(directory)/str.C_Str();
+        texture.id=loadTextureFile(texturePath.c_str());
+      }
+      if(!texture.id)continue;
       texture.type=type;
       texture.path=str.C_Str();
       textures.push_back(texture);

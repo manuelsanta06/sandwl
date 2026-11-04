@@ -63,7 +63,7 @@ void CoreEngine::init(){
   diffuseMap=loadTextureFile("src/world/learnAssets/metalBoxDiffuser.png");
   specularMap=loadTextureFile("src/world/learnAssets/metalBoxSpecular.png");
   backpack=Model("src/world/learnAssets/backpack/backpack.obj");
-  elephant=Model("src/world/learnAssets/elephant/source/low+polly+elephant.glb");
+  elephant=Model("src/world/learnAssets/elephant/source/low+polly+elephant.glb",false);
 }
 
 CoreEngine::~CoreEngine(){
